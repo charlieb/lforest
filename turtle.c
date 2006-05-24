@@ -4,20 +4,20 @@ struct turtle turtle_stack[256];
 int angle_inc = 10;
 int draw_length = 10;
 
-void gen_lines(struct tree* tree)
+void gen_branches(struct tree* tree)
 {
-  int lines = count_lines(tree);
+  int branches = count_branches(tree);
   int t_stack_idx = 0;
   int i = -1;
   int line_ct = 0;
 
-  if(lines > tree->n_lines) {
-    if(tree->lines) free(tree->lines);
-    tree->lines = malloc(lines * sizeof(struct line));
-    if(tree->lines) 
-      tree->n_lines = lines;
+  if(branches > tree->n_branches) {
+    if(tree->branches) free(tree->branches);
+    tree->branches = malloc(branches * sizeof(struct line));
+    if(tree->branches) 
+      tree->n_branches = branches;
     else {
-      printf("Failed to allocate memory for lines\n");
+      printf("Failed to allocate memory for branches\n");
       exit(-1);
     }
       
@@ -40,11 +40,11 @@ void gen_lines(struct tree* tree)
     */
     switch(tree->expansion[i]) {
     case DRAW_CHAR:
-      tree->lines[line_ct].start.x = turtle_stack[t_stack_idx].x;
-      tree->lines[line_ct].start.y = turtle_stack[t_stack_idx].y;
+      tree->branches[line_ct].start.x = turtle_stack[t_stack_idx].x;
+      tree->branches[line_ct].start.y = turtle_stack[t_stack_idx].y;
       walk(&turtle_stack[t_stack_idx]);
-      tree->lines[line_ct].end.x = turtle_stack[t_stack_idx].x;
-      tree->lines[line_ct].end.y = turtle_stack[t_stack_idx].y;
+      tree->branches[line_ct].end.x = turtle_stack[t_stack_idx].x;
+      tree->branches[line_ct].end.y = turtle_stack[t_stack_idx].y;
       line_ct++;
       break;
     case TURN_CL:
@@ -75,15 +75,15 @@ void gen_lines(struct tree* tree)
   }
 }
 
-int count_lines(struct tree* tree)
+int count_branches(struct tree* tree)
 {
   int i = -1;
-  int lines = 0;
+  int branches = 0;
   for(i=0; i < tree->exp_size; ++i)
     if(tree->expansion[i] == DRAW_CHAR) 
-      lines++;
-  /* printf("count_lines found %i lines\n", lines); */
-  return lines;
+      branches++;
+  /* printf("count_branches found %i branches\n", branches); */
+  return branches;
 }
 
 /* Leaf counting and descrimination */
@@ -158,20 +158,20 @@ void print_leaves(struct tree* tree)
   int i;
   for(i=0; i < tree->n_leaves; ++i) {
     printf("(%1.3f, %1.3f)->(%1.3f, %1.3f)\n", 
-	   tree->lines[tree->leaves[i]].start.x, 
-	   tree->lines[tree->leaves[i]].start.y,
-	   tree->lines[tree->leaves[i]].end.x,
-	   tree->lines[tree->leaves[i]].end.y);
+	   tree->branches[tree->leaves[i]].start.x, 
+	   tree->branches[tree->leaves[i]].start.y,
+	   tree->branches[tree->leaves[i]].end.x,
+	   tree->branches[tree->leaves[i]].end.y);
   }
 }
 
-void print_lines(struct tree* tree)
+void print_branches(struct tree* tree)
 {
   int i;
-  for(i=0; i < tree->n_lines; ++i) {
+  for(i=0; i < tree->n_branches; ++i) {
     printf("(%1.3f, %1.3f)->(%1.3f, %1.3f)\n", 
-	   tree->lines[i].start.x, tree->lines[i].start.y,
-	   tree->lines[i].end.x, tree->lines[i].end.y);
+	   tree->branches[i].start.x, tree->branches[i].start.y,
+	   tree->branches[i].end.x, tree->branches[i].end.y);
   }
 }
 /*  ---- turtle commands ----  */

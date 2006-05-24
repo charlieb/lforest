@@ -34,8 +34,8 @@ void test_tree()
     /*print_syms(tree.expansion, tree.exp_size, tree.seed.num_rules);*/
   }
 
-  gen_lines(&tree);
-  printf("Generated Lines\n");
+  gen_branches(&tree);
+  printf("Generated Branches\n");
   tree.pos.x = 320;
   tree.pos.y = 400;
   draw_tree(&tree, &screen); 
@@ -59,7 +59,7 @@ void perfect_tree()
 	  "(!(+++++++++!)---------!)+++++++++",
 	  tree.exp_size);
   
-  gen_lines(&tree);
+  gen_branches(&tree);
   /*  print_leaves(&tree); */
   score_tree(&tree);
  
@@ -80,7 +80,7 @@ void half_tree(int its)
 	  "(!(+++++++++!)----------)+++++++++",
 	  tree.exp_size);
   
-  gen_lines(&tree);
+  gen_branches(&tree);
   /* print_leaves(&tree); */
   score_tree(&tree);
  
@@ -137,7 +137,7 @@ void test()
     for(i=0; i < n_trees; ++i) {
       trees[i].iterations++;
       expand_rule(trees[i].expansion, &trees[i].exp_size, &trees[i].seed);
-      gen_lines(&trees[i]);
+      gen_branches(&trees[i]);
 
       trees[i].score--; 
 

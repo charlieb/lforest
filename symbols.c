@@ -39,29 +39,29 @@ void print_rule_set(struct rule_set *rules)
     print_syms(get_rule(i, rules), rules->rule_size, rules->num_rules);
 }
 
+void chars_to_rule(char *chars, int length, int max_rule)
+{
+  int i;
+  char val;
+  for(i=0; i < length; ++i) {
+    val = chars[i] - '0';
+    if(max_rule > val && val >= 0) 
+      chars[i] = val;
+  }    
+}
 
 int expansion_length(char *exp, int exp_size, struct rule_set *rule)
 {
-  int i, j;
-  int rule_sizes[MAX_RULES];
+  int i;
   int total = 0;
 
-  /* init */
-  for(i=0; i < rule->num_rules; ++i) rule_sizes[i] = 0;
-
-  /* count the valid chars in the each rule */
-  for(i=0; i < rule->num_rules; ++i) 
-    for(j=0; j < rule->rule_size; ++j)
-      if(get_rule(i, rule)[j] != BLANK) 
-	++rule_sizes[i];
-  
   for(i=0; i < exp_size; ++i) 
-    if(exp[i] <= rule->rule_size) 
-      total += rule_sizes[(int)exp[i]];
+    if(exp[i] <= rule->num_rules)
+      total += rule->rule_size;
     else
       total++;
 
-  /*  printf("expansion_length => %i\n", total); */
+  printf("expansion_length: %i\n", total); 
 
   return total;
 }
@@ -69,7 +69,6 @@ int expansion_length(char *exp, int exp_size, struct rule_set *rule)
 void expand_rule(char exp[MAX_EXPANSION_SIZE],
 		 int *exp_size, struct rule_set *rules)
 {
-  int new_exp_size = expansion_length(exp, *exp_size, rules);
   char new_exp[MAX_EXPANSION_SIZE];
   char *rule = NULL;
   int i;
@@ -77,17 +76,11 @@ void expand_rule(char exp[MAX_EXPANSION_SIZE],
   int rule_pos = 0;
   int rule_len;
  
-  if(*exp_size >= MAX_EXPANSION_SIZE) 
-    new_exp_size = MAX_EXPANSION_SIZE;
-  
-  if(!new_exp) {
-    printf("Failed to malloc in expand_rule\n");
-    exit(-1);
-  }
-  
-  for(i=0; i < *exp_size; ++i) 
+  for(i=0; i < *exp_size; ++i) {
+    if(exp_pos >= MAX_EXPANSION_SIZE) break;
+
     if(exp[i] > rules->num_rules) 
-      new_exp[exp_pos++] = exp[i]; /* Not a rule, just a char */
+	new_exp[exp_pos++] = exp[i]; /* Not a rule, just a char */
     else {
       rule = get_rule(exp[i], rules);
       rule_len = rules->rule_size;
@@ -98,9 +91,12 @@ void expand_rule(char exp[MAX_EXPANSION_SIZE],
       while(rule_pos <= rule_len && exp_pos < MAX_EXPANSION_SIZE)
 	new_exp[exp_pos++] = rule[rule_pos++];
     }
-  
-  *exp_size = new_exp_size;
-  for(i=0; i < new_exp_size; ++i) exp[i] = new_exp[i];
+  }
+ 
+  printf("Expand: %i -> %i\n", *exp_size, exp_pos);
+ 
+  *exp_size = exp_pos;
+  memcpy(exp, new_exp, exp_pos); 
 }
 
 void random_rule_set(struct rule_set *rules)
@@ -129,15 +125,4 @@ void random_rule_set(struct rule_set *rules)
   /*
   print_rule_set(rules);  
   */
-}
-
-void chars_to_rule(char *chars, int length, int max_rule)
-{
-  int i;
-  char val;
-  for(i=0; i < length; ++i) {
-    val = chars[i] - '0';
-    if(max_rule > val && val >= 0) 
-      chars[i] = val;
-  }    
 }

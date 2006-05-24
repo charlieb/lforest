@@ -32,8 +32,8 @@ struct tree {
   char expansion[MAX_EXPANSION_SIZE];
   int exp_size;
 
-  struct line* lines;
-  int n_lines;
+  struct line *branches;
+  int n_branches;
   /* leaves => lines[leaves[n]] */
   int *leaves;
   int n_leaves;

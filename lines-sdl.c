@@ -48,22 +48,22 @@ void draw_tree(struct tree *tree, SDL_Surface **surface)
     SDL_FillRect(*surface, &size, 0x000000);
   
 
-  /* Draw all the lines*/
-  for (i=0; i < tree->n_lines; ++i)
+  /* Draw all the branches*/
+  for (i=0; i < tree->n_branches; ++i)
     lineColor(*surface, 
-	      tree->pos.x - tree->lines[i].start.x, 
-	      tree->pos.y - tree->lines[i].start.y,
-	      tree->pos.x - tree->lines[i].end.x,
-	      tree->pos.y - tree->lines[i].end.y,
+	      tree->pos.x - tree->branches[i].start.x, 
+	      tree->pos.y - tree->branches[i].start.y,
+	      tree->pos.x - tree->branches[i].end.x,
+	      tree->pos.y - tree->branches[i].end.y,
 	      0xAAAA00FF); 
 
   /* Redraw only the leaves */
   for(i = 0; i < tree->n_leaves; ++i)
     lineColor(*surface, 
-	      tree->pos.x - tree->lines[tree->leaves[i]].start.x, 
-	      tree->pos.y - tree->lines[tree->leaves[i]].start.y,
-	      tree->pos.x - tree->lines[tree->leaves[i]].end.x,
-	      tree->pos.y - tree->lines[tree->leaves[i]].end.y,
+	      tree->pos.x - tree->branches[tree->leaves[i]].start.x, 
+	      tree->pos.y - tree->branches[tree->leaves[i]].start.y,
+	      tree->pos.x - tree->branches[tree->leaves[i]].end.x,
+	      tree->pos.y - tree->branches[tree->leaves[i]].end.y,
 	      0x00FF00FF);
   
   SDL_Flip(*surface);
@@ -115,29 +115,29 @@ void draw_trees(struct tree trees[], int n_trees, SDL_Surface **surface)
   
 
   for(tree=0; tree < n_trees; ++tree) {
-    /* Draw all the lines*/
-    for (i=0; i < trees[tree].n_lines; ++i)
+    /* Draw all the branches*/
+    for (i=0; i < trees[tree].n_branches; ++i)
       lineColor(*surface, 
-		trees[tree].pos.x - trees[tree].lines[i].start.x, 
-		trees[tree].pos.y - trees[tree].lines[i].start.y,
-		trees[tree].pos.x - trees[tree].lines[i].end.x,
-		trees[tree].pos.y - trees[tree].lines[i].end.y,
+		trees[tree].pos.x - trees[tree].branches[i].start.x, 
+		trees[tree].pos.y - trees[tree].branches[i].start.y,
+		trees[tree].pos.x - trees[tree].branches[i].end.x,
+		trees[tree].pos.y - trees[tree].branches[i].end.y,
 		0xAAAA00FF); 
     
     /* Redraw only the leaves */
     for(i = 0; i < trees[tree].n_leaves; ++i)
       lineColor(*surface, 
 		trees[tree].pos.x - 
-		trees[tree].lines[trees[tree].leaves[i]].start.x, 
+		trees[tree].branches[trees[tree].leaves[i]].start.x, 
 
 		trees[tree].pos.y -
-		trees[tree].lines[trees[tree].leaves[i]].start.y,
+		trees[tree].branches[trees[tree].leaves[i]].start.y,
 
 		trees[tree].pos.x -
-		trees[tree].lines[trees[tree].leaves[i]].end.x,
+		trees[tree].branches[trees[tree].leaves[i]].end.x,
 
 		trees[tree].pos.y - 
-		trees[tree].lines[trees[tree].leaves[i]].end.y,
+		trees[tree].branches[trees[tree].leaves[i]].end.y,
 
 		0x00FF00FF);
   }

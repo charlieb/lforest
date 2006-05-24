@@ -115,24 +115,6 @@ void get_intersection(struct line_eq *l1, struct line_eq *l2,
   }
 }
 
-int intersects(struct line *l1, struct line *l2, struct point *itsec)
-{
-  if(MAX(l1->start.x, l1->end.x) >= itsec->x &&
-     MIN(l1->start.x, l1->end.x) <= itsec->x &&
-     
-     MAX(l2->start.x, l2->end.x) >= itsec->x &&
-     MIN(l2->start.x, l2->end.x) <= itsec->x &&
-     
-     MAX(l1->start.y, l1->end.y) >= itsec->y &&
-     MIN(l1->start.y, l1->end.y) <= itsec->y &&
-     
-     MAX(l2->start.y, l2->end.y) >= itsec->y &&
-     MIN(l2->start.y, l2->end.y) <= itsec->y)
-    return 1;
-  else
-    return 0;
-}
-
 int ray_intersects(struct ray *ray, struct line *line, struct point *itsec)
 {
   int special_case_flags = 0;
@@ -195,29 +177,4 @@ int ray_intersects(struct ray *ray, struct line *line, struct point *itsec)
 
   *itsec = tmp_point;
   return 1;
-}
-
-
-
-int round2int(float flt)
-{ 
-  int flr = (int)floor((double)flt);
-  if(flt - flr >= 0.5)
-    return flr + 1;
-  else
-    return flr;
-}
-
-void intersection(struct line *ab, struct line *cd, struct point *isec)
-{
-  /* y = mx + c */
-  float mab, cab, mcd, ccd;
-  mab = (ab->end.y - ab->start.y) / (ab->end.x - ab->start.x);
-  cab = ab->start.y - mab * ab->start.x;
-
-  mcd = (cd->end.y - cd->start.y) / (cd->end.x - cd->start.x);
-  ccd = cd->start.y - mcd * cd->start.x;
-
-  isec->x = round2int((ccd - cab) / (mab + mcd));
-  isec->y = round2int(mab * isec->x + cab);
 }

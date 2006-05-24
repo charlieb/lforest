@@ -5,8 +5,8 @@ void init_tree(struct tree *tree)
   tree->iterations = 0;
   tree->exp_size = 0;
 
-  tree->lines = NULL;
-  tree->n_lines = 0;
+  tree->branches = NULL;
+  tree->n_branches = 0;
   
   tree->leaves = NULL;
   tree->n_leaves = 0;
@@ -35,11 +35,11 @@ void free_tree(struct tree *tree)
 {
   tree->exp_size = 0;
 
-  if(tree->lines) {  
-    free(tree->lines);
-    tree->lines = NULL;
+  if(tree->branches) {  
+    free(tree->branches);
+    tree->branches = NULL;
   }
-  tree->n_lines = 0;
+  tree->n_branches = 0;
   
   if(tree->leaves) {
     free(tree->leaves);
@@ -112,7 +112,7 @@ int leaf_catches_ray(struct tree *tree, struct ray *ray)
   struct point itsec;
 
   for(i=0; i < tree->n_leaves; ++i)
-    if(ray_intersects(ray, tree->lines + tree->leaves[i], &itsec)) {
+    if(ray_intersects(ray, tree->branches + tree->leaves[i], &itsec)) {
       distance = dist(&tree->pos, &itsec);
       if(distance < closest) closest_leaf = i;
     }
@@ -157,17 +157,17 @@ void score_tree(struct tree *tree)
   /*  leaf_scores = NULL; */
 
     
-  printf("Leaves, Lines, Rays, Hits: %i, %i, %i, %i\n", 
-	 tree->n_leaves, tree->n_lines, tree->n_rays, hits);
+  printf("Leaves, Branches, Rays, Hits: %i, %i, %i, %i\n", 
+	 tree->n_leaves, tree->n_branches, tree->n_rays, hits);
   if(tree->n_leaves > 0)
     print_syms(tree->expansion, tree->exp_size, tree->seed.num_rules);
 
   /* Ideally you'd get 1 hit per leaf */  
-  if((float)tree->n_lines * (float)tree->n_leaves > 0)
+  if((float)tree->n_branches * (float)tree->n_leaves > 0)
     tree->score = 
       (int)((float)hits
 	    - (float)tree->n_leaves / 32.0 
-	    - (float)tree->n_lines / 64.0 
+	    - (float)tree->n_branches / 64.0 
 	    - (float)tree->exp_size / 64.0);
 }
 

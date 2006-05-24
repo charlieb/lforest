@@ -16,11 +16,11 @@
 #define TURN_ACL '-'
 
 
-void gen_lines(struct tree* tree);
-int count_lines(struct tree* tree);
+void gen_branches(struct tree* tree);
+int count_branches(struct tree* tree);
 void find_leaves(struct tree *tree);
 
-void print_lines(struct tree* tree);
+void print_branches(struct tree* tree);
 void print_leaves(struct tree* tree);
 
 void walk(struct turtle* turt);

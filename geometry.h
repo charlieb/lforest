@@ -18,11 +18,6 @@ void get_equation(struct line *l, struct line_eq *eq);
 void get_intersection(struct line_eq *l1, struct line_eq *l2,
 		      struct point *itsec);
 
-int intersects(struct line *l1, struct line *l2, struct point *itsec);
-
 int ray_intersects(struct ray *ray, struct line *line, struct point *itsec);
 
-int round2int(float flt);
-
-void intersection(struct line *ab, struct line *cd, struct point *isec);
 
