@@ -69,7 +69,7 @@ int expansion_length(char *exp, int exp_size, struct rule_set *rule)
 void expand_rule(char exp[MAX_EXPANSION_SIZE],
 		 int *exp_size, struct rule_set *rules)
 {
-  char new_exp[MAX_EXPANSION_SIZE];
+  static char new_exp[MAX_EXPANSION_SIZE];
   char *rule = NULL;
   int i;
   int exp_pos = 0;

@@ -7,13 +7,18 @@ src=.
 dest=bin
 
 
-l-sys: tree turtle lines-sdl geometry symbols
+l-sys: tree genetics turtle lines-sdl geometry symbols
 	$(CC) $(flags) $(includes) \
 	-o $(dest)/l-sys \
 	$(dest)/turtle.o $(dest)/lines-sdl.o $(dest)/symbols.o \
-	$(dest)/tree.o $(dest)/geometry.o \
+	$(dest)/tree.o $(dest)/geometry.o $(dest)/genetics.o \
 	$(src)/main.c \
 	$(libs) $(sdl_incl) $(sdl_lib)
+
+genetics:
+	$(CC) $(flags) $(includes) \
+	-o $(dest)/genetics.o \
+	-c $(src)/genetics.c
 
 tree:
 	$(CC) $(flags) $(includes) \
@@ -39,4 +44,3 @@ lines-sdl:
 	$(CC) $(flags) $(includes) $(sdl_incl) \
 	-o $(dest)/lines-sdl.o \
 	-c $(src)/lines-sdl.c
-

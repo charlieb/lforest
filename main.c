@@ -6,6 +6,7 @@
 #include "lines-sdl.h"
 #include "symbols.h"
 #include "tree.h"
+#include "genetics.h"
 
 void test_tree()
 {
@@ -85,33 +86,6 @@ void half_tree(int its)
   score_tree(&tree);
  
 }
-
-int uniform_select(int n)
-{
-  return (int)(n * (random() / (float)RAND_MAX));
-}
-
-int roulette_select(float *weights, int n_weights)
-{
-  float rnd = random() / (float)RAND_MAX;
-  float total = weights[0];
-  int w = 0;
-
-  while(total < rnd) total += weights[++w];
-  return w;
-}
-
-void generate_weights(struct tree *trees, int n_trees, float *weights)
-{
-  int i;
-  float total = 0.0;
-  for(i=0; i < n_trees; ++i) total += trees[i].score;
-  for(i=0; i < n_trees; ++i) {
-    weights[i] = (float)trees[i].score / total;
-    /*    printf("Weight[%i] = %f\n", i, weights[i]); */
-  }
-}
-
 
 void test()
 {

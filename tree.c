@@ -96,7 +96,7 @@ void gen_rays(struct tree *tree)
     */
   }
 
-  /* random ray distribution */
+  /* random ray distribution perhaps?? */
 }
 
 /* Finds the nearest leaf that will catch the ray,
@@ -116,12 +116,6 @@ int leaf_catches_ray(struct tree *tree, struct ray *ray)
       distance = dist(&tree->pos, &itsec);
       if(distance < closest) closest_leaf = i;
     }
-  /*
-  if(closest_leaf >= 0)
-    printf("RAY: (%f, %f) HIT %i at (%f, %f)\n", 
-	   ray->direction.x, ray->direction.y,
-	   closest_leaf, itsec.x, itsec.y);
-  */
 
   /* Record the intersection point for drawing */
   ray->direction.x = itsec.x;
@@ -130,16 +124,14 @@ int leaf_catches_ray(struct tree *tree, struct ray *ray)
   return closest_leaf;
 }
 
+#define MAX_HITS_PER_LEAF 10
+
 void score_tree(struct tree *tree)
 {
-  /* 1. Tree gets a point for each ray that hits a leaf
-     2. Tree is charged a fraction of a point for each leaf
-     3. Tree is charged a smaller fraction of a point for each non-leaf
-  */
+
   int i, hits = 0, leaf = -1;
-  /*  int *leaf_scores = calloc(tree->n_leaves, sizeof(int)); */
-  int leaf_scores[10000];
-  for(i=0; i < 10000; ++i) leaf_scores[i] = 0;
+  static int leaf_scores[MAX_EXPANSION_SIZE];
+  for(i=0; i < tree->n_leaves; ++i) leaf_scores[i] = 0;
 
   if(tree->rays) free(tree->rays);
   tree->rays = NULL;
@@ -150,46 +142,22 @@ void score_tree(struct tree *tree)
     leaf = leaf_catches_ray(tree, tree->rays + i);
     /* printf("Hit leaf %i\n", leaf); */
     if(leaf >= 0)
-      if(leaf_scores[leaf]++ < 10) 
+      if(leaf_scores[leaf]++ < MAX_HITS_PER_LEAF) 
 	hits++;
   }
-  /*  free(leaf_scores); */
-  /*  leaf_scores = NULL; */
-
-    
+ 
   printf("Leaves, Branches, Rays, Hits: %i, %i, %i, %i\n", 
 	 tree->n_leaves, tree->n_branches, tree->n_rays, hits);
   if(tree->n_leaves > 0)
     print_syms(tree->expansion, tree->exp_size, tree->seed.num_rules);
 
-  /* Ideally you'd get 1 hit per leaf */  
+  /* The scoring equation */
   if((float)tree->n_branches * (float)tree->n_leaves > 0)
     tree->score = 
       (int)((float)hits
 	    - (float)tree->n_leaves / 32.0 
 	    - (float)tree->n_branches / 64.0 
 	    - (float)tree->exp_size / 64.0);
-}
-
-void crossover(struct tree *tree1, struct tree *tree2, struct tree *offspring)
-{
-  int length = tree1->seed.rule_size * tree1->seed.num_rules;
-  int cross_point;
-  /* check that the trees are compatible */
-  if(length != tree2->seed.rule_size * tree2->seed.num_rules) return;
-
-  init_tree(offspring);
-  /* Copy the structure from the first parent */
-  offspring->seed.rule_size = tree1->seed.rule_size;
-  offspring->seed.num_rules = tree1->seed.num_rules;
-  init_rule_set(&offspring->seed);
-
-  /* crossover */
-  cross_point = (int)(length * (rand() / (float)RAND_MAX));
-  /*  printf("Crossover at %i\n", cross_point); */
-  memcpy(offspring->seed.rules, tree1->seed.rules, cross_point);
-  memcpy(offspring->seed.rules + cross_point, tree2->seed.rules + cross_point,
-	  length - cross_point);  
 }
 
 

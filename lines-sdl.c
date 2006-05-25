@@ -32,7 +32,8 @@ SDL_Surface *make_sdl_surface(int width, int height)
 
 void draw_tree(struct tree *tree, SDL_Surface **surface)
 {
-  int go = 1, i;
+  int go = 1, i, leaf;
+  unsigned long colour;
   static int cont = -1;
   SDL_Event event;
   SDL_Rect size;
@@ -46,25 +47,24 @@ void draw_tree(struct tree *tree, SDL_Surface **surface)
     *surface = make_sdl_surface(size.w, size.h);
   else
     SDL_FillRect(*surface, &size, 0x000000);
-  
 
-  /* Draw all the branches*/
-  for (i=0; i < tree->n_branches; ++i)
+
+  leaf = 0;
+  for (i=0; i < tree->n_branches; ++i) {
+    if(tree->leaves[leaf] == i) {
+      colour = 0x00FF00FF;
+      if(leaf < tree->n_leaves - 1) leaf++;
+    }
+    else
+      colour = 0xAAAA00FF;
+    
     lineColor(*surface, 
 	      tree->pos.x - tree->branches[i].start.x, 
 	      tree->pos.y - tree->branches[i].start.y,
 	      tree->pos.x - tree->branches[i].end.x,
 	      tree->pos.y - tree->branches[i].end.y,
-	      0xAAAA00FF); 
-
-  /* Redraw only the leaves */
-  for(i = 0; i < tree->n_leaves; ++i)
-    lineColor(*surface, 
-	      tree->pos.x - tree->branches[tree->leaves[i]].start.x, 
-	      tree->pos.y - tree->branches[tree->leaves[i]].start.y,
-	      tree->pos.x - tree->branches[tree->leaves[i]].end.x,
-	      tree->pos.y - tree->branches[tree->leaves[i]].end.y,
-	      0x00FF00FF);
+	      colour);
+  }
   
   SDL_Flip(*surface);
   
@@ -98,8 +98,9 @@ void draw_tree(struct tree *tree, SDL_Surface **surface)
 
 void draw_trees(struct tree trees[], int n_trees, SDL_Surface **surface)
 {
-  int go = 1, i, tree;
+  int go = 1, i, tree, leaf;
   static int cont = -1;
+  unsigned long colour;
   SDL_Event event;
   SDL_Rect size;
   size.x = 0;
@@ -113,34 +114,24 @@ void draw_trees(struct tree trees[], int n_trees, SDL_Surface **surface)
   else
     SDL_FillRect(*surface, &size, 0x000000);
   
-
-  for(tree=0; tree < n_trees; ++tree) {
+  leaf = 0;
+  for(tree=0; tree < n_trees; ++tree) 
     /* Draw all the branches*/
-    for (i=0; i < trees[tree].n_branches; ++i)
+    for (i=0; i < trees[tree].n_branches; ++i) {
+      if(trees[tree].leaves[leaf] == i) {
+	colour = 0x00FF00FF;
+	if(leaf < trees[tree].n_leaves - 1) leaf++;
+      }
+      else
+	colour = 0xAAAA00FF;
+      
       lineColor(*surface, 
 		trees[tree].pos.x - trees[tree].branches[i].start.x, 
 		trees[tree].pos.y - trees[tree].branches[i].start.y,
 		trees[tree].pos.x - trees[tree].branches[i].end.x,
 		trees[tree].pos.y - trees[tree].branches[i].end.y,
-		0xAAAA00FF); 
-    
-    /* Redraw only the leaves */
-    for(i = 0; i < trees[tree].n_leaves; ++i)
-      lineColor(*surface, 
-		trees[tree].pos.x - 
-		trees[tree].branches[trees[tree].leaves[i]].start.x, 
-
-		trees[tree].pos.y -
-		trees[tree].branches[trees[tree].leaves[i]].start.y,
-
-		trees[tree].pos.x -
-		trees[tree].branches[trees[tree].leaves[i]].end.x,
-
-		trees[tree].pos.y - 
-		trees[tree].branches[trees[tree].leaves[i]].end.y,
-
-		0x00FF00FF);
-  }
+		colour);
+    }
 
   SDL_Flip(*surface);
   
