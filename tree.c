@@ -33,6 +33,8 @@ void init_tree(struct tree *tree)
 
 void free_tree(struct tree *tree)
 {
+  reset_tree(tree);
+
   tree->exp_size = 0;
 
   if(tree->branches) {  
@@ -50,17 +52,43 @@ void free_tree(struct tree *tree)
   free_rule_set(&tree->seed);
 }
 
+void reset_tree(struct tree *tree)
+{
+  tree->exp_size = 0;
+  tree->expansion[0] = '\0';
+
+  tree->iterations = 0;
+  
+  if(tree->branches) {  
+    free(tree->branches);
+    tree->branches = NULL;
+  }
+  tree->n_branches = 0;
+  
+  if(tree->leaves) {
+    free(tree->leaves);
+    tree->leaves = NULL;
+  }
+  tree->n_leaves = 0;
+
+  if(tree->rays) {
+    free(tree->rays);
+    /*
+    printf("freed rays\n");
+    fflush(NULL);
+    */
+    tree->rays = NULL;
+  }
+  tree->n_rays = 0;
+}
+
 void randomize_tree(struct tree *tree)
 {
   /* Make sure the tree's empty */
-  free_tree(tree);
-  init_tree(tree);
-
+  reset_tree(tree);
   /* Generate random rules */
-  init_rule_set(&tree->seed);
   random_rule_set(&tree->seed);
 }
-
 
 void gen_rays(struct tree *tree)
 {
@@ -68,11 +96,24 @@ void gen_rays(struct tree *tree)
   struct line vec;
   float ray_angle_inc, ray_angle = 0.0;
 
-  if(tree->n_rays > 0 || tree->rays != NULL) return;
+  if(tree->rays) {
+    free(tree->rays);
+    /*
+    printf("freed rays\n");
+    fflush(NULL);
+    */
+  }
+  tree->rays = NULL;
+  if(tree->n_rays != 0) tree->n_rays = 0;
+  /*  if(tree->n_rays > 0 || tree->rays != NULL) return; */
 
   /* n_rays should depend on n_leaves */
-  tree->n_rays = tree->n_leaves;/* * tree->n_leaves;*/
+  tree->n_rays = 2 * tree->iterations * tree->iterations;
+
   tree->rays = malloc(tree->n_rays * sizeof(struct ray));
+  /*  printf("malloc rays\n");
+      fflush(NULL);
+  */
   if(tree->rays == NULL) {
     printf("Failed to allocate memory for rays\n");
     exit(-1);
@@ -82,14 +123,14 @@ void gen_rays(struct tree *tree)
 
   /* regular ray distribution */
   for(i=0; i < tree->n_rays; ++i) {
-    vec.start.x = tree->pos.x;
-    vec.start.y = tree->pos.y;
+    vec.start.x = tree->pos.x + 5 - 10 * (float)rand() / (float)RAND_MAX;
+    vec.start.y = tree->pos.y + 5 - 10 * (float)rand() / (float)RAND_MAX;
     ray_angle += ray_angle_inc;
     vec.end.x = sin_cache((int)ray_angle);
     vec.end.y = cos_cache((int)ray_angle);
     get_equation(&vec, &tree->rays[i].ray_eq);
     tree->rays[i].direction = vec.end;   
-    /*        
+    /*
     printf("Ray: %fx + %f: (%f, %f)\n", 
 	   tree->rays[i].ray_eq.m, tree->rays[i].ray_eq.c,
 	   tree->rays[i].direction.x, tree->rays[i].direction.y);
@@ -124,7 +165,7 @@ int leaf_catches_ray(struct tree *tree, struct ray *ray)
   return closest_leaf;
 }
 
-#define MAX_HITS_PER_LEAF 10
+#define MAX_HITS_PER_LEAF 5
 
 void score_tree(struct tree *tree)
 {
@@ -133,31 +174,32 @@ void score_tree(struct tree *tree)
   static int leaf_scores[MAX_EXPANSION_SIZE];
   for(i=0; i < tree->n_leaves; ++i) leaf_scores[i] = 0;
 
-  if(tree->rays) free(tree->rays);
-  tree->rays = NULL;
-  if(tree->n_rays != 0) tree->n_rays = 0;
-
   gen_rays(tree);
   for(i=0; i < tree->n_rays; ++i) {
     leaf = leaf_catches_ray(tree, tree->rays + i);
     /* printf("Hit leaf %i\n", leaf); */
-    if(leaf >= 0)
+    if(leaf >= 0 && !(f_eq(tree->rays[i].direction.x, 0.0) &&
+		      f_eq(tree->rays[i].direction.y, 0.0)))
       if(leaf_scores[leaf]++ < MAX_HITS_PER_LEAF) 
 	hits++;
   }
- 
+  
+  /*
   printf("Leaves, Branches, Rays, Hits: %i, %i, %i, %i\n", 
 	 tree->n_leaves, tree->n_branches, tree->n_rays, hits);
+  */
+  /*
   if(tree->n_leaves > 0)
     print_syms(tree->expansion, tree->exp_size, tree->seed.num_rules);
-
+  */
   /* The scoring equation */
-  if((float)tree->n_branches * (float)tree->n_leaves > 0)
-    tree->score = 
+  /* if((float)tree->n_branches * (float)tree->n_leaves > 0) */
+  if((float)tree->n_leaves > 0)
+    tree->score += 
       (int)((float)hits
-	    - (float)tree->n_leaves / 32.0 
-	    - (float)tree->n_branches / 64.0 
-	    - (float)tree->exp_size / 64.0);
+	    - (float)tree->n_leaves / 1.5
+	    - (float)tree->n_branches / 8.0
+	    );
+  else
+    tree->score -= 1;
 }
-
-

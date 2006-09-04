@@ -15,14 +15,13 @@ struct line_eq{
   float m, c;
 };
 
-
 struct rule_set {
   int rule_size;
   int num_rules;
   char * rules;
 };
 
-#define MAX_EXPANSION_SIZE 10000
+#define MAX_EXPANSION_SIZE 1000
 struct tree {
   struct point pos;
 

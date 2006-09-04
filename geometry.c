@@ -1,10 +1,5 @@
 #include "geometry.h"
 
-#define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
-#define MAX(X,Y) ((X) > (Y) ? (X) : (Y))
-#define FLT_DELTA 0.000000000000001
-#define FLT_LARGE 10000000000000000.0
-
 /*
 #define FLT_DELTA FLT_MIN
 #define FLT_LARGE FLT_MAX

@@ -4,9 +4,11 @@ SDL_Surface *make_sdl_surface(int width, int height)
 {
   SDL_Surface *screen = NULL;
 
+  /*
   printf("Initialising SDL surface %i x %i\n", width, height);
   fflush(NULL);
-  
+  */
+
   /* Initialize the SDL library */
   if( SDL_Init(SDL_INIT_VIDEO) < 0 ) {
     printf("Couldn't initialize SDL: %s\n", SDL_GetError());
@@ -96,35 +98,29 @@ void draw_tree(struct tree *tree, SDL_Surface **surface)
   */
 }
 
-void draw_trees(struct tree trees[], int n_trees, SDL_Surface **surface)
+int draw_trees(struct tree trees[], int n_trees, SDL_Surface **surface)
 {
   int go = 1, i, tree, leaf;
-  static int cont = -1;
+  static int cont = 1;
   unsigned long colour;
   SDL_Event event;
-  SDL_Rect size;
-  size.x = 0;
-  size.y = 0;
-  size.w = 640;
-  size.h = 480;
-
 
   if(!*surface) 
-    *surface = make_sdl_surface(size.w, size.h);
+    *surface = make_sdl_surface(640, 480);
   else
-    SDL_FillRect(*surface, &size, 0x000000);
+    SDL_FillRect(*surface, NULL, 0x000000);
   
-  leaf = 0;
-  for(tree=0; tree < n_trees; ++tree) 
-    /* Draw all the branches*/
+  for(tree=0; tree < n_trees; ++tree) {
+    leaf = 0;
     for (i=0; i < trees[tree].n_branches; ++i) {
-      if(trees[tree].leaves[leaf] == i) {
-	colour = 0x00FF00FF;
-	if(leaf < trees[tree].n_leaves - 1) leaf++;
-      }
-      else
-	colour = 0xAAAA00FF;
-      
+      colour = 0xAAAA00FF;
+      /* If branch is a leaf colour it green */
+      if(leaf < trees[tree].n_leaves)
+	if(trees[tree].leaves[leaf] == i) {
+	  colour = 0x00FF00FF;
+	  leaf++;
+	}
+
       lineColor(*surface, 
 		trees[tree].pos.x - trees[tree].branches[i].start.x, 
 		trees[tree].pos.y - trees[tree].branches[i].start.y,
@@ -132,6 +128,7 @@ void draw_trees(struct tree trees[], int n_trees, SDL_Surface **surface)
 		trees[tree].pos.y - trees[tree].branches[i].end.y,
 		colour);
     }
+  }
 
   SDL_Flip(*surface);
   
@@ -145,7 +142,7 @@ void draw_trees(struct tree trees[], int n_trees, SDL_Surface **surface)
 	switch (event.key.keysym.sym) {
 	case SDLK_ESCAPE:
 	case SDLK_q:
-	  exit(0);
+	  return -1;
 	case SDLK_RETURN:
 	  go = 0;
 	  break;
@@ -157,6 +154,8 @@ void draw_trees(struct tree trees[], int n_trees, SDL_Surface **surface)
       }
     if(cont > 0) go = 0;
   }
+
+  return 0;
 
   /*  SDL_FreeSurface(*surface);
   *surface = NULL;

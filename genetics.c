@@ -2,7 +2,7 @@
 
 int uniform_select(int n)
 {
-  return (int)(n * (random() / (float)RAND_MAX));
+  return (int)((float)n * ((float)random() / (float)RAND_MAX));
 }
 
 int roulette_select(float *weights, int n_weights)
@@ -11,7 +11,7 @@ int roulette_select(float *weights, int n_weights)
   float total = weights[0];
   int w = 0;
 
-  while(total < rnd) total += weights[++w];
+  while(total < rnd && w < n_weights - 1) total += weights[++w];
   return w;
 }
 
@@ -22,7 +22,7 @@ void generate_weights(struct tree *trees, int n_trees, float *weights)
   for(i=0; i < n_trees; ++i) total += trees[i].score;
   for(i=0; i < n_trees; ++i) {
     weights[i] = (float)trees[i].score / total;
-    /*    printf("Weight[%i] = %f\n", i, weights[i]); */
+    /*    printf("score[%i] = %i : %f\n", i, trees[i].score, weights[i]); */
   }
 }
 

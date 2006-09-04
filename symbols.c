@@ -5,7 +5,8 @@
 
 void init_rule_set(struct rule_set *rules)
 {
-  rules->rules = malloc(rules->rule_size * rules->num_rules);
+  if(rules->num_rules == 0) rules->rules = NULL;
+  else rules->rules = malloc(rules->rule_size * rules->num_rules);
 }
 
 void free_rule_set(struct rule_set *rules)
@@ -60,9 +61,9 @@ int expansion_length(char *exp, int exp_size, struct rule_set *rule)
       total += rule->rule_size;
     else
       total++;
-
+  /*
   printf("expansion_length: %i\n", total); 
-
+  */
   return total;
 }
 
@@ -92,9 +93,9 @@ void expand_rule(char exp[MAX_EXPANSION_SIZE],
 	new_exp[exp_pos++] = rule[rule_pos++];
     }
   }
- 
+  /* 
   printf("Expand: %i -> %i\n", *exp_size, exp_pos);
- 
+  */
   *exp_size = exp_pos;
   memcpy(exp, new_exp, exp_pos); 
 }

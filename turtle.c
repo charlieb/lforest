@@ -119,8 +119,10 @@ void find_leaves(struct tree *tree)
 	/* ignore extra POPs */
 	if(paren_depth > 0) {
 	  if(last_draw != -1 && last_draw_depth == paren_depth) {
+	    /*
 	    printf("Found line[%i] is leaf[%i] at char[%i]\n", 
 		   last_draw, leaf_no, i);
+	    */
 	    if(leaf_no >= tree->n_leaves) {
 	      tree->n_leaves += LEAF_BLOCK_SIZE;
 	      tree->leaves = realloc(tree->leaves, 
@@ -137,8 +139,10 @@ void find_leaves(struct tree *tree)
 
   /* The last draw is always a leaf */
   if(last_draw != -1) {
+    /*
     printf("Found line[%i] is leaf[%i] at char[%i]\n", 
 	   last_draw, leaf_no, i);
+    */
     if(leaf_no >= tree->n_leaves) {
       tree->n_leaves += LEAF_BLOCK_SIZE;
       tree->leaves = realloc(tree->leaves, 

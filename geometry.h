@@ -5,6 +5,15 @@
 
 #include "types.h"
 
+#define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
+#define MAX(X,Y) ((X) > (Y) ? (X) : (Y))
+#define FLT_DELTA 0.000000000000001
+#define FLT_LARGE 10000000000000000.0
+
+int f_eq(float a, float b);
+int f_gt_eq(float a, float b);
+int f_lt_eq(float a, float b);
+
 float cos_cache(int angle);
 float sin_cache(int angle);
 

@@ -6,6 +6,7 @@
 #include "lines-sdl.h"
 #include "symbols.h"
 #include "tree.h"
+#include "forest.h"
 #include "genetics.h"
 
 void test_tree()
@@ -87,102 +88,30 @@ void half_tree(int its)
  
 }
 
+
+
 void test()
 {
-  struct tree trees[100];
-  int n_trees = 100;
+  struct tree trees[N_TREES];
 
-  float weights[100];
-  int i, j, replace, parent1, parent2, child;
-  int w, h, wc, hc;
-  SDL_Surface *screen = NULL;
+  int i, draw_ret = 0;
 
-  for(i=0; i < n_trees; ++i) {
-    trees[i].seed.rule_size = 10;
-    trees[i].seed.num_rules = 2;
-    init_tree(&trees[i]);
-    trees[i].pos.x = 320;
-    trees[i].pos.y = 240;
-    trees[i].score = 10;
-    randomize_tree(&trees[i]);
+  SDL_Surface *screen = NULL; 
+
+  init_forest(trees);
+
+  for(i=0; draw_ret == 0; ++i) {
+    iterate_forest(trees);
+    draw_ret = draw_forest(trees, screen);
+    breed_forest(trees);
   }
 
-  for(j=0; j < 1000; ++j) {
-    for(i=0; i < n_trees; ++i) {
-      trees[i].iterations++;
-      expand_rule(trees[i].expansion, &trees[i].exp_size, &trees[i].seed);
-      gen_branches(&trees[i]);
+  printf("%li iterations\n", i);
+  
+  for(i=0; i < N_TREES; ++i)
+    free_tree(&trees[i]);
 
-      trees[i].score--; 
-
-      score_tree(&trees[i]);
-
-      /*
-	print_syms(trees[i].expansion,trees[i].exp_size,
-	trees[i].seed.num_rules);
- 	printf("--------\n");
-	print_rule_set(&trees[i].seed);
-	fflush(NULL);
-      */
-      
-      printf("%i: tree %i, its %i scored %i\n", j , i, 
-	     trees[i].iterations,
-	     trees[i].score);
-      
-      /* if your score is zero, you DIE */
-      if(trees[i].score <= 0) {
-	printf("Tree Killed\n");
-	init_tree(&trees[i]);
-	randomize_tree(&trees[i]);
-	trees[i].score = 1;
-      }
-    }
-
-    w = 60;
-    h = 40;
-    for(wc=0; wc < 10; ++wc)
-      for(hc=0; hc < 10; ++hc) {
-	trees[wc * 10 + hc].pos.x = 20 + wc * w;
-	trees[wc * 10 + hc].pos.y = 40 + hc * h;
-      }
-
-    draw_trees(trees, n_trees, &screen);
-    
-    generate_weights(trees, n_trees, weights);
-    for(replace=0; replace < 25; ++replace) {
-      /* Select the parents and a place for the child */
-      parent1 = roulette_select(weights, n_trees);
-      parent2 = roulette_select(weights, n_trees);
-      /* Child cannot be either of the parents */
-      child = parent1;
-      while(child == parent1 || child == parent2)
-	child = uniform_select(n_trees);
-      /*
-      printf("Breeding: %i + %i -> %i\n", parent1, parent2, child);
-      */
-      /* Generate the child */
-      /*      print_rule_set(&trees[parent1].seed); 
-      printf("+\n");
-      print_rule_set(&trees[parent2].seed); 
-      printf("->\n");
-      */
-
-      /* Charge the parents for having kids */
-      
-      crossover(&trees[parent1], &trees[parent2], &trees[child]);
-
-      /*
-      trees[parent1].score -= 5;
-      trees[parent2].score -= 5;
-      */
-      /*
-      print_rule_set(&trees[child].seed);  
-      printf("-------\n");
-      */
-    }
-
-    SDL_FreeSurface(screen);
-  }
+  SDL_FreeSurface(screen);
 }
 
 

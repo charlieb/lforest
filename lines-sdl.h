@@ -11,5 +11,5 @@
 
 SDL_Surface *make_sdl_surface(int width, int height);
 void draw_tree(struct tree *tree, SDL_Surface **surface);
-void draw_trees(struct tree trees[], int n_trees, SDL_Surface **surface);
+int draw_trees(struct tree trees[], int n_trees, SDL_Surface **surface);
 #endif

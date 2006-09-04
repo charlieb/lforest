@@ -12,6 +12,8 @@ void init_tree(struct tree *tree);
 
 void free_tree(struct tree *tree);
 
+void reset_tree(struct tree *tree);
+
 void randomize_tree(struct tree *tree);
 
 void gen_rays(struct tree *tree);
