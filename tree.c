@@ -140,6 +140,54 @@ void gen_rays(struct tree *tree)
   /* random ray distribution perhaps?? */
 }
 
+int leaf_ray_intersect(struct line *leaf, struct ray *ray, struct point *p)
+{
+	/* if there is no intersection, return 0 */
+	if(!intersect(leaf, ray, p))
+		return 0;
+
+	/* check to see if the intersection is on the right end
+		 of the ray */
+	if(ray->direction.x > 0) {
+		if(p->x < ray->origin.x)
+			return 0;
+	}
+	else {
+		if(p->x > ray->origin.x)
+			return 0;
+	}
+
+	if(ray->direction.y > 0) {
+		if(p->y < ray->origin.y)
+			return 0;
+	}
+	else {
+		if(p->y > ray->origin.y)
+			return 0;
+	}
+
+	/* check the intersection is within the leaf */
+	if(leaf->start.x < leaf->end.x) {
+		if(leaf->start.x > p->x || p->x > leaf->end.x)
+			return 0;
+	}
+	else {
+		if(leaf->start.x < p->x || p->x < leaf->end.x)
+			return 0;
+	}
+
+	if(leaf->start.y < leaf->end.y) {
+		if(leaf->start.y > p->y || p->y > leaf->end.y)
+			return 0;
+	}
+	else {
+		if(leaf->start.y < p->y || p->y < leaf->end.y)
+			return 0;
+	}
+
+	return 0;
+}
+
 /* Finds the nearest leaf that will catch the ray,
    returns its index,
    if no leaf catches ray, returns -1
@@ -155,7 +203,10 @@ int leaf_catches_ray(struct tree *tree, struct ray *ray)
   for(i=0; i < tree->n_leaves; ++i)
     if(ray_intersects(ray, tree->branches + tree->leaves[i], &itsec)) {
       distance = dist(&tree->pos, &itsec);
-      if(distance < closest) closest_leaf = i;
+      if(distance < closest) {
+				closest = distance;
+				closest_leaf = i;
+			}
     }
 
   /* Record the intersection point for drawing */
@@ -165,8 +216,33 @@ int leaf_catches_ray(struct tree *tree, struct ray *ray)
   return closest_leaf;
 }
 
-#define MAX_HITS_PER_LEAF 5
+void tree_lights(struct tree *trees, int ntrees)
+{
+  float closest = 100000000.0;
+  int closest_tree = -1;
+  int distance;
+  struct point itsec;
+	int i, j, k, r;
 
+	for(i = 0; i < ntrees; ++i) {
+		gen_rays(&trees[i]);
+		for(j = 0; j < ntrees; ++j)
+			for(k = 0; k < trees->n_leaves; ++k) 
+				for(r = 0; r < trees->n_rays; ++r) {
+					ray_intersects(&trees[i].rays[r],
+												 trees[j].branches + trees[j].leaves[k], &itsec);
+					distance = dist(&trees[i].pos, &itsec);
+					if(distance < closest) {
+						closest = distance;
+						closest_tree = j;
+					}
+				}
+		trees[closest_tree].score++;
+	}
+	
+}
+
+#define MAX_HITS_PER_LEAF 5
 void score_tree(struct tree *tree)
 {
 

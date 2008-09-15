@@ -1,52 +1,16 @@
 CC=gcc
-flags=-pedantic -Wall -g
-sdl_incl=`sdl-config --cflags`
-sdl_lib=`sdl-config --libs` -lSDL_gfx
-libs=-lm
-src=.
-dest=bin
+CFLAGS=-std=c99 -pedantic -Wall -Wextra -g -D_GNU_SOURCE
+INCLUDES=`sdl-config --cflags`
+LIBS=-lm `sdl-config --libs` -lSDL_gfx
+SOURCES=$(wildcard *.c)
+OBJECTS=$(SOURCES:.c=.o)
+DEST=bin
 
+.c.o:
+	$(CC) $(FLAGS) $(INCLUDES) -c $< -o $@
 
-l-sys: tree genetics turtle lines-sdl geometry symbols forest
-	$(CC) $(flags) $(includes) \
-	-o $(dest)/l-sys \
-	$(dest)/turtle.o $(dest)/lines-sdl.o $(dest)/symbols.o \
-	$(dest)/tree.o $(dest)/geometry.o $(dest)/genetics.o \
-	$(dest)/forest.o \
-	$(src)/main.c \
-	$(libs) $(sdl_incl) $(sdl_lib)
+l-sys: $(OBJECTS)
+	$(CC) $(FLAGS) $(LIBS) $(OBJECTS) -o $(DEST)/l-sys
 
-genetics:
-	$(CC) $(flags) $(includes) \
-	-o $(dest)/genetics.o \
-	-c $(src)/genetics.c
-
-tree:
-	$(CC) $(flags) $(includes) \
-	-o $(dest)/tree.o \
-	-c $(src)/tree.c
-
-forest:
-	$(CC) $(flags) $(includes) $(sdl_incl) \
-	-o $(dest)/forest.o \
-	-c $(src)/forest.c
-
-turtle:
-	$(CC) $(flags) $(includes) \
-	-o $(dest)/turtle.o \
-	-c $(src)/turtle.c
-
-geometry:
-	$(CC) $(flags) $(includes) \
-	-o $(dest)/geometry.o \
-	-c $(src)/geometry.c
-
-symbols:
-	$(CC) $(flags) $(includes) \
-	-o $(dest)/symbols.o \
-	-c $(src)/symbols.c
-
-lines-sdl:
-	$(CC) $(flags) $(includes) $(sdl_incl) \
-	-o $(dest)/lines-sdl.o \
-	-c $(src)/lines-sdl.c
+clean:
+	- rm -f $(OBJECTS) $(DEST)/l-sys

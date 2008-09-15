@@ -18,7 +18,7 @@ struct line_eq{
 struct rule_set {
   int rule_size;
   int num_rules;
-  char * rules;
+  char *rules;
 };
 
 #define MAX_EXPANSION_SIZE 1000
@@ -41,7 +41,7 @@ struct tree {
   int n_rays;
 
   int score;
-  
+	int next_score;
 };
 
 struct turtle {
@@ -51,6 +51,7 @@ struct turtle {
 
 struct ray {
   struct line_eq ray_eq;
+	struct point origin;
   struct point direction;
 };
 

@@ -47,6 +47,7 @@ void init_sapling(struct tree* tree)
   init_rule_set(&tree->seed);
   init_tree(tree);
   tree->score = 0;
+	tree->next_score = 0;
   randomize_tree(tree);
   grow_sapling(tree);
 }
@@ -66,38 +67,99 @@ void iterate_forest(struct tree trees[N_TREES])
   static int dead_trees[N_TREES]; 
   int n_dead_trees = 0; 
   
-  static int next_scores[N_TREES];
   int last_score, i;
 
 
   for(i=0; i < N_TREES; ++i) {
-    if(trees[i].score >= next_scores[i]) {
+    if(trees[i].score >= trees[i].next_score) {
       trees[i].iterations++;
       expand_rule(trees[i].expansion, &trees[i].exp_size, &trees[i].seed);
       gen_branches(&trees[i]);
-      next_scores[i] = 1 + next_scores[i] * 2;
+      trees[i].next_score = 1 + trees[i].next_score * 2;
     }
     else
       trees[i].score--;
-    
-    last_score = trees[i].score;
-    score_tree(&trees[i]);
-
-    /*    printf("tree[%i].score = %i\n", i, trees[i].score); */
-    
-    /* if your score is zero, you DIE */
-    /* If a tree dies it gets randomly re-initialized */
-          
-    if(trees[i].score <= 0) {
-      if(n_dead_trees < N_TREES)
-	dead_trees[n_dead_trees++] = i;
-      reset_tree(&trees[i]);
-      init_sapling(&trees[i]);
-      gen_branches(&trees[i]);
-      next_scores[i] = 0;
-    }
+	
+	
+		last_score = trees[i].score;
+		score_tree(&trees[i]);
+	
+	/*tree_lights(struct tree trees[N_TREES]);*/
+	/*    printf("tree[%i].score = %i\n", i, trees[i].score); */
+	
+	/* if your score is zero, you DIE */
+	/* If a tree dies it gets randomly re-initialized */
+	if(trees[i].score <= 0) {
+		if(n_dead_trees < N_TREES)
+			dead_trees[n_dead_trees++] = i;
+		reset_tree(&trees[i]);
+		init_sapling(&trees[i]);
+		gen_branches(&trees[i]);
+	}
   }
   /*printf("%i trees died\n", n_dead_trees); */
+}
+
+void iterate_single_light_forest(struct tree trees[N_TREES])
+{
+	struct ray *rays = 0;
+	int nrays = 100, i, j, r;
+  float ray_angle_inc, ray_angle = 0.0;
+	struct line vec;
+	struct point pos, itsec;
+	float closest = 100000000, distance;
+	int closest_leaf, closest_tree;
+	
+	rays = malloc(nrays * sizeof(struct ray));
+	if(NULL == rays) {
+		printf("iterate_single_light_forest: failed to allocate rays\n");
+		exit(1);
+	}
+	
+	ray_angle_inc = 360 / (float)nrays;
+	
+  /* regular ray distribution */
+  for(i=0; i < nrays; ++i) {
+    vec.start.x = pos.x + 5 - 10 * (float)rand() / (float)RAND_MAX;
+    vec.start.y = pos.y + 5 - 10 * (float)rand() / (float)RAND_MAX;
+    ray_angle += ray_angle_inc;
+    vec.end.x = sin_cache((int)ray_angle);
+    vec.end.y = cos_cache((int)ray_angle);
+    get_equation(&vec, &rays[i].ray_eq);
+    rays[i].direction = vec.end;   
+    /*
+			printf("Ray: %fx + %f: (%f, %f)\n", 
+			tree->rays[i].ray_eq.m, tree->rays[i].ray_eq.c,
+			tree->rays[i].direction.x, tree->rays[i].direction.y);
+    */
+  }
+
+	for(i=0; i < N_TREES; ++i) {
+    if(trees[i].score >= trees[i].next_score) {
+      trees[i].iterations++;
+      expand_rule(trees[i].expansion, &trees[i].exp_size, &trees[i].seed);
+      gen_branches(&trees[i]);
+      trees[i].next_score = 1 + trees[i].next_score * 2;
+    }
+    else
+      trees[i].score--;
+	}
+
+	for(r = 0; r < nrays; ++r) {
+		for(i=0; i < N_TREES; ++i)
+			for(j = 0; j < trees[i].n_leaves; ++j)
+				if(leaf_ray_intersect(&rays[r], 
+															trees[i].branches + trees[i].leaves[j], 
+															&itsec)) {
+					distance = dist(&trees[i].pos, &itsec);
+					if(distance < closest) {
+						closest = distance;
+						closest_tree = i;
+						closest_leaf = j;
+					}
+				}
+		trees[closest_tree].score++;
+	}
 }
 
 void breed_forest(struct tree trees[N_TREES])

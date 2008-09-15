@@ -23,7 +23,7 @@ SDL_Surface *make_sdl_surface(int width, int height)
    * requesting a software surface
    */
 
-  screen = SDL_SetVideoMode(width, height, 8, SDL_SWSURFACE);
+  screen = SDL_SetVideoMode(width, height, 8, SDL_SWSURFACE | SDL_DOUBLEBUF);
   if ( screen == NULL ) {
     fprintf(stderr, "Couldn't set %dx%d video mode: %s\n",
 	    width, height, SDL_GetError());
