@@ -185,7 +185,7 @@ int leaf_ray_intersect(struct line *leaf, struct ray *ray, struct point *p)
 			return 0;
 	}
 
-	return 0;
+	return 1;
 }
 
 /* Finds the nearest leaf that will catch the ray,

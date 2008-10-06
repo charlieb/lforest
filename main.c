@@ -101,8 +101,8 @@ void test()
   init_forest(trees);
 
   for(i=0; draw_ret == 0; ++i) {
-    iterate_forest(trees);
-    draw_ret = draw_forest(trees, screen);
+    iterate_single_light_forest(trees);
+    draw_ret = draw_forest(trees, &screen);
     breed_forest(trees);
   }
 

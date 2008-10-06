@@ -7,7 +7,7 @@
 
 int f_eq(float a, float b)
 {
-  if(fabs(MAX(a,b) - MIN(a,b) <= FLT_DELTA))
+  if(fabs(MAX(a,b) - MIN(a,b)) <= FLT_DELTA)
     return 1;
   else 
     return 0;
@@ -17,7 +17,7 @@ int f_gt_eq(float a, float b)
 {
   if(a > b)
     return 1;
-  else if(fabs(MAX(a,b) - MIN(a,b) <= FLT_DELTA))
+  else if(fabs(MAX(a,b) - MIN(a,b)) <= FLT_DELTA)
     return 1;
   else 
     return 0;
@@ -27,7 +27,7 @@ int f_lt_eq(float a, float b)
 {
   if(a < b)
     return 1;
-  else if(fabs(MAX(a,b) - MIN(a,b) <= FLT_DELTA))
+  else if(fabs(MAX(a,b) - MIN(a,b)) <= FLT_DELTA)
     return 1;
   else 
     return 0;
@@ -120,6 +120,7 @@ int intersect(struct line *l1, struct line *l2, struct point *p)
 
 	p->x = x_numer / x_denom;
 	p->y = y_numer / y_denom;
+
 	return 1;
 }
 

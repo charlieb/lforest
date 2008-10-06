@@ -37,7 +37,6 @@ void grow_sapling(struct tree* tree)
    expand_rule(tree->expansion, 
 	       &tree->exp_size, &tree->seed);
  tree->iterations = 3;
- tree->score = 1;
 }
 
 void init_sapling(struct tree* tree)
@@ -46,10 +45,10 @@ void init_sapling(struct tree* tree)
   tree->seed.num_rules = 5;
   init_rule_set(&tree->seed);
   init_tree(tree);
-  tree->score = 0;
-	tree->next_score = 0;
+  tree->score = 5;
+	tree->next_score = 10;
   randomize_tree(tree);
-  grow_sapling(tree);
+  /*grow_sapling(tree);*/
 }
 
 void init_forest(struct tree trees[N_TREES])
@@ -107,7 +106,7 @@ void iterate_single_light_forest(struct tree trees[N_TREES])
   float ray_angle_inc, ray_angle = 0.0;
 	struct line vec;
 	struct point pos, itsec;
-	float closest = 100000000, distance;
+	float closest = FLT_MAX, distance;
 	int closest_leaf, closest_tree;
 	
 	rays = malloc(nrays * sizeof(struct ray));
@@ -146,7 +145,8 @@ void iterate_single_light_forest(struct tree trees[N_TREES])
 	}
 
 	for(r = 0; r < nrays; ++r) {
-		for(i=0; i < N_TREES; ++i)
+		closest = FLT_MAX;
+		for(i = 0; i < N_TREES; ++i)
 			for(j = 0; j < trees[i].n_leaves; ++j)
 				if(leaf_ray_intersect(&rays[r], 
 															trees[i].branches + trees[i].leaves[j], 
@@ -158,7 +158,27 @@ void iterate_single_light_forest(struct tree trees[N_TREES])
 						closest_leaf = j;
 					}
 				}
-		trees[closest_tree].score++;
+
+		if(closest < FLT_MAX) {
+			//printf("trees[%i].score++\n", closest_tree);
+			trees[closest_tree].score++;
+		}
+	}
+
+	free(rays);
+
+	/* if your score is zero, you DIE */
+	/* If a tree dies it gets randomly re-initialized */
+	for(i = 0; i < N_TREES; ++i) {
+		//printf("trees[%i].score = %i\n", i, trees[i].score);
+		if(trees[i].score <= 0) {
+			/*if(n_dead_trees < N_TREES)
+				dead_trees[n_dead_trees++] = i;*/
+			//printf("trees[%i] died\n", i);
+			reset_tree(&trees[i]);
+			init_sapling(&trees[i]);
+			gen_branches(&trees[i]);
+		}
 	}
 }
 
@@ -196,7 +216,7 @@ void breed_forest(struct tree trees[N_TREES])
   }
 }
 
-int draw_forest(struct tree trees[N_TREES], SDL_Surface *screen)
+int draw_forest(struct tree trees[N_TREES], SDL_Surface **screen)
 {
   int w, h, wc, hc;
 
@@ -206,5 +226,5 @@ int draw_forest(struct tree trees[N_TREES], SDL_Surface *screen)
       trees[wc * HEIGHT + hc].pos.x = (float)(TREE_SPACE + wc * w);
       trees[wc * HEIGHT + hc].pos.y = (float)(TREE_SPACE + hc * h);
     }
-  return draw_trees(trees, N_TREES, &screen);
+  return draw_trees(trees, N_TREES, screen);
 }

@@ -105,7 +105,7 @@ int draw_trees(struct tree trees[], int n_trees, SDL_Surface **surface)
   unsigned long colour;
   SDL_Event event;
 
-  if(!*surface) 
+  if(NULL == *surface)
     *surface = make_sdl_surface(640, 480);
   else
     SDL_FillRect(*surface, NULL, 0x000000);
@@ -116,17 +116,17 @@ int draw_trees(struct tree trees[], int n_trees, SDL_Surface **surface)
       colour = 0xAAAA00FF;
       /* If branch is a leaf colour it green */
       if(leaf < trees[tree].n_leaves)
-	if(trees[tree].leaves[leaf] == i) {
-	  colour = 0x00FF00FF;
-	  leaf++;
-	}
-
+				if(trees[tree].leaves[leaf] == i) {
+					colour = 0x00FF00FF;
+					leaf++;
+				}
+			
       lineColor(*surface, 
-		trees[tree].pos.x - trees[tree].branches[i].start.x, 
-		trees[tree].pos.y - trees[tree].branches[i].start.y,
-		trees[tree].pos.x - trees[tree].branches[i].end.x,
-		trees[tree].pos.y - trees[tree].branches[i].end.y,
-		colour);
+								trees[tree].pos.x - trees[tree].branches[i].start.x, 
+								trees[tree].pos.y - trees[tree].branches[i].start.y,
+								trees[tree].pos.x - trees[tree].branches[i].end.x,
+								trees[tree].pos.y - trees[tree].branches[i].end.y,
+								colour);
     }
   }
 
@@ -136,25 +136,25 @@ int draw_trees(struct tree trees[], int n_trees, SDL_Surface **surface)
     while(SDL_PollEvent(&event)) 
       switch(event.type) {
       case SDL_QUIT: 
-	go = 0; 
-	break;
+				go = 0; 
+				break;
       case SDL_KEYDOWN:
-	switch (event.key.keysym.sym) {
-	case SDLK_ESCAPE:
-	case SDLK_q:
-	  return -1;
-	case SDLK_RETURN:
-	  go = 0;
-	  break;
-	case SDLK_c:
-	  cont = -cont;
-	default:
-	  break;
-	}
+				switch (event.key.keysym.sym) {
+				case SDLK_ESCAPE:
+				case SDLK_q:
+					return -1;
+				case SDLK_RETURN:
+					go = 0;
+					break;
+				case SDLK_c:
+					cont = -cont;
+				default:
+					break;
+				}
       }
     if(cont > 0) go = 0;
   }
-
+	
   return 0;
 
   /*  SDL_FreeSurface(*surface);

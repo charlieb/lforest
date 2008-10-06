@@ -7,10 +7,10 @@ OBJECTS=$(SOURCES:.c=.o)
 DEST=bin
 
 .c.o:
-	$(CC) $(FLAGS) $(INCLUDES) -c $< -o $@
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 l-sys: $(OBJECTS)
-	$(CC) $(FLAGS) $(LIBS) $(OBJECTS) -o $(DEST)/l-sys
+	$(CC) $(CFLAGS) $(LIBS) $(OBJECTS) -o $(DEST)/l-sys
 
 clean:
 	- rm -f $(OBJECTS) $(DEST)/l-sys
