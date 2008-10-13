@@ -98,6 +98,7 @@ void test()
 
   SDL_Surface *screen = NULL; 
 
+	memset(trees, 0, N_TREES * sizeof(struct tree));
   init_forest(trees);
 
   for(i=0; draw_ret == 0; ++i) {
@@ -106,7 +107,7 @@ void test()
     breed_forest(trees);
   }
 
-  printf("%li iterations\n", i);
+  printf("%i iterations\n", i);
   
   for(i=0; i < N_TREES; ++i)
     free_tree(&trees[i]);

@@ -20,6 +20,8 @@ void gen_rays(struct tree *tree);
 
 int leaf_catches_ray(struct tree *tree, struct ray *ray);
 
+int leaf_ray_intersect(struct line *leaf, struct ray *ray, struct point *p);
+
 void score_tree(struct tree *tree);
 
 #endif

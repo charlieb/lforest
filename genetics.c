@@ -46,5 +46,5 @@ void crossover(struct tree *tree1, struct tree *tree2, struct tree *offspring)
   /*  printf("Crossover at %i\n", cross_point); */
   memcpy(offspring->seed.rules, tree1->seed.rules, cross_point);
   memcpy(offspring->seed.rules + cross_point, tree2->seed.rules + cross_point,
-	 length - cross_point);  
+				 length - cross_point);  
 }

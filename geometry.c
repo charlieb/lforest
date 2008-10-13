@@ -7,7 +7,7 @@
 
 int f_eq(float a, float b)
 {
-  if(fabs(MAX(a,b) - MIN(a,b)) <= FLT_DELTA)
+  if(fabs(a - b) <= FLT_DELTA)
     return 1;
   else 
     return 0;
@@ -56,7 +56,7 @@ float sin_cache(int angle)
 
   if(init == 0) {
     init = 1;
-    for(i=0; i < 360; ++i) 
+    for(i=0; i < 360; ++i)
       table[i] = sin(i*M_PI/180);
   }
 
@@ -120,13 +120,13 @@ int intersect(struct line *l1, struct line *l2, struct point *p)
 
 	p->x = x_numer / x_denom;
 	p->y = y_numer / y_denom;
-
+	
 	return 1;
 }
 
 void get_equation(struct line *l, struct line_eq *eq)
 {
-  if(f_eq(l->end.x, l->start.x)) {
+	if(f_eq(l->end.x, l->start.x)) {
     eq->m = FLT_LARGE;
     eq->c = l->end.y - l->end.x * eq->m;
   }

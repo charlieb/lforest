@@ -12,14 +12,14 @@
 #include "genetics.h"
 #include "lines-sdl.h"
 
-#define WIDTH 32
-#define HEIGHT 24
+#define WIDTH 16 //32
+#define HEIGHT 12 //24
 #define N_TREES WIDTH * HEIGHT
-#define TREE_SPACE 20
+#define TREE_SPACE 40 //20
 
 void index2coords(int index, int *x, int *y);
 int coords2index(int x, int y);
-int pick_neighbour(int parent, struct tree trees[N_TREES]);
+int pick_neighbour(int parent);
 void init_sapling(struct tree* tree);
 void init_forest(struct tree trees[N_TREES]);
 void iterate_forest(struct tree trees[N_TREES]);

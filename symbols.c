@@ -68,7 +68,7 @@ int expansion_length(char *exp, int exp_size, struct rule_set *rule)
 }
 
 void expand_rule(char exp[MAX_EXPANSION_SIZE],
-		 int *exp_size, struct rule_set *rules)
+								 int *exp_size, struct rule_set *rules)
 {
   static char new_exp[MAX_EXPANSION_SIZE];
   char *rule = NULL;
@@ -81,7 +81,7 @@ void expand_rule(char exp[MAX_EXPANSION_SIZE],
     if(exp_pos >= MAX_EXPANSION_SIZE) break;
 
     if(exp[i] > rules->num_rules) 
-	new_exp[exp_pos++] = exp[i]; /* Not a rule, just a char */
+			new_exp[exp_pos++] = exp[i]; /* Not a rule, just a char */
     else {
       rule = get_rule(exp[i], rules);
       rule_len = rules->rule_size;
@@ -90,7 +90,7 @@ void expand_rule(char exp[MAX_EXPANSION_SIZE],
       rule_len--;
       /* copy chars */
       while(rule_pos <= rule_len && exp_pos < MAX_EXPANSION_SIZE)
-	new_exp[exp_pos++] = rule[rule_pos++];
+				new_exp[exp_pos++] = rule[rule_pos++];
     }
   }
   /* 

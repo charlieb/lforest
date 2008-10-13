@@ -11,7 +11,7 @@ int coords2index(int x, int y)
   return y * WIDTH + x;
 }
 
-int pick_neighbour(int parent, struct tree trees[N_TREES])
+int pick_neighbour(int parent)
 {
   /* Is there an empty slot next to either of the parents? */
   /* If it's in the first row don't check the UP */
@@ -29,14 +29,14 @@ int pick_neighbour(int parent, struct tree trees[N_TREES])
   return coords2index(x + xoffset, y + yoffset);   
 }
 
-void grow_sapling(struct tree* tree)
+void grow_sapling(struct tree* tree, int iterations)
 {
  int init;
  
- for(init=0; init < 3; ++init)
+ for(init=0; init < iterations; ++init)
    expand_rule(tree->expansion, 
 	       &tree->exp_size, &tree->seed);
- tree->iterations = 3;
+ tree->iterations = iterations;
 }
 
 void init_sapling(struct tree* tree)
@@ -48,7 +48,7 @@ void init_sapling(struct tree* tree)
   tree->score = 5;
 	tree->next_score = 10;
   randomize_tree(tree);
-  /*grow_sapling(tree);*/
+  grow_sapling(tree, 1);
 }
 
 void init_forest(struct tree trees[N_TREES])
@@ -102,10 +102,10 @@ void iterate_forest(struct tree trees[N_TREES])
 void iterate_single_light_forest(struct tree trees[N_TREES])
 {
 	struct ray *rays = 0;
-	int nrays = 100, i, j, r;
+	int nrays = 250, i, j, r;
   float ray_angle_inc, ray_angle = 0.0;
-	struct line vec;
-	struct point pos, itsec;
+	struct line abs_leaf;
+	struct point itsec;
 	float closest = FLT_MAX, distance;
 	int closest_leaf, closest_tree;
 	
@@ -114,26 +114,46 @@ void iterate_single_light_forest(struct tree trees[N_TREES])
 		printf("iterate_single_light_forest: failed to allocate rays\n");
 		exit(1);
 	}
-	
+	memset(rays, 0, nrays * sizeof(struct ray));
+
 	ray_angle_inc = 360 / (float)nrays;
 	
   /* regular ray distribution */
-  for(i=0; i < nrays; ++i) {
-    vec.start.x = pos.x + 5 - 10 * (float)rand() / (float)RAND_MAX;
-    vec.start.y = pos.y + 5 - 10 * (float)rand() / (float)RAND_MAX;
+  for(i = 0; i < nrays; ++i) {
+		rays[i].origin.x = 640 * (float)rand() / (float)RAND_MAX;; 
+		rays[i].origin.y = 480 * (float)rand() / (float)RAND_MAX;
     ray_angle += ray_angle_inc;
-    vec.end.x = sin_cache((int)ray_angle);
-    vec.end.y = cos_cache((int)ray_angle);
-    get_equation(&vec, &rays[i].ray_eq);
-    rays[i].direction = vec.end;   
-    /*
-			printf("Ray: %fx + %f: (%f, %f)\n", 
-			tree->rays[i].ray_eq.m, tree->rays[i].ray_eq.c,
-			tree->rays[i].direction.x, tree->rays[i].direction.y);
-    */
+		rays[i].direction.x = sin_cache((int)ray_angle);
+    rays[i].direction.y = cos_cache((int)ray_angle);
   }
 
-	for(i=0; i < N_TREES; ++i) {
+	for(r = 0; r < nrays; ++r) {
+		closest = FLT_MAX;
+		for(i = 0; i < N_TREES; ++i)
+			for(j = 0; j < trees[i].n_leaves; ++j) {
+				abs_leaf = trees[i].branches[trees[i].leaves[j]];
+				abs_leaf.start.x += trees[i].pos.x;
+				abs_leaf.start.y += trees[i].pos.y;
+				abs_leaf.end.x += trees[i].pos.x;
+				abs_leaf.end.y += trees[i].pos.y;
+				if(leaf_ray_intersect(&abs_leaf, &rays[r], &itsec)) {
+					distance = dist(&rays[r].origin, &itsec);
+					if(distance < closest) {
+						closest = distance;
+						closest_tree = i;
+						closest_leaf = j;
+					}
+				}
+			}
+
+		if(closest < FLT_MAX) {
+			/*printf("%i, ", closest_tree);*/
+			trees[closest_tree].score++;
+		}
+	}
+	/*printf("\n");*/
+
+	for(i = 0; i < N_TREES; ++i)
     if(trees[i].score >= trees[i].next_score) {
       trees[i].iterations++;
       expand_rule(trees[i].expansion, &trees[i].exp_size, &trees[i].seed);
@@ -142,29 +162,7 @@ void iterate_single_light_forest(struct tree trees[N_TREES])
     }
     else
       trees[i].score--;
-	}
-
-	for(r = 0; r < nrays; ++r) {
-		closest = FLT_MAX;
-		for(i = 0; i < N_TREES; ++i)
-			for(j = 0; j < trees[i].n_leaves; ++j)
-				if(leaf_ray_intersect(&rays[r], 
-															trees[i].branches + trees[i].leaves[j], 
-															&itsec)) {
-					distance = dist(&trees[i].pos, &itsec);
-					if(distance < closest) {
-						closest = distance;
-						closest_tree = i;
-						closest_leaf = j;
-					}
-				}
-
-		if(closest < FLT_MAX) {
-			//printf("trees[%i].score++\n", closest_tree);
-			trees[closest_tree].score++;
-		}
-	}
-
+	
 	free(rays);
 
 	/* if your score is zero, you DIE */
@@ -185,23 +183,33 @@ void iterate_single_light_forest(struct tree trees[N_TREES])
 void breed_forest(struct tree trees[N_TREES])
 {
   int replace, parent1, parent2, child;
-  static float weights[N_TREES];
+	float weights[N_TREES];
+	char used[N_TREES];
+	float smallest_weight = 1.0;
+	int i;
   
+	memset(used, 0, N_TREES);
   generate_weights(trees, N_TREES, weights);
-  for(replace=0; replace < (int)(N_TREES * 0.1); ++replace) {
+  for(replace = 0; replace < (int)(N_TREES * 0.1); ++replace) {
     /* Select the parents and a place for the child */
-    child = -1; /*uniform_select(N_TREES);*/
+		for(i = 0; i < N_TREES; ++i)
+			if(weights[i] < smallest_weight && 0 == used[i]) {
+				smallest_weight = weights[i];
+				child = i;
+			}
+		used[child] = 1;
+    /* child = -1; *//*uniform_select(N_TREES);*/
     
     parent1 = child;
     while(child == parent1)
       parent1 = roulette_select(weights, N_TREES);
     
-    parent2 = child;
-    while(child == parent2)
+		parent2 = child;
+    while(child == parent2 || parent1 == parent2)
       parent2 = roulette_select(weights, N_TREES);
-    
-    parent2 = pick_neighbour(parent1, trees);
-    child = pick_neighbour(parent1, trees);
+		
+    /*parent2 = pick_neighbour(parent1, trees);*/
+    /*child = pick_neighbour(parent1, trees);*/
 
     /*
     printf("Breeding: %i(%i) + %i(%i) = %i(%i)\n", 
@@ -211,7 +219,7 @@ void breed_forest(struct tree trees[N_TREES])
     */
     crossover(&trees[parent1], &trees[parent2], &trees[child]);
 
-    grow_sapling(&trees[child]);
+    grow_sapling(&trees[child], 1);
     gen_branches(&trees[child]);
   }
 }
@@ -221,8 +229,8 @@ int draw_forest(struct tree trees[N_TREES], SDL_Surface **screen)
   int w, h, wc, hc;
 
   w = h = TREE_SPACE;
-  for(wc=0; wc < WIDTH; ++wc)
-    for(hc=0; hc < HEIGHT; ++hc) {
+  for(wc = 0; wc < WIDTH; ++wc)
+    for(hc = 0; hc < HEIGHT; ++hc) {
       trees[wc * HEIGHT + hc].pos.x = (float)(TREE_SPACE + wc * w);
       trees[wc * HEIGHT + hc].pos.y = (float)(TREE_SPACE + hc * h);
     }

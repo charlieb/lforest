@@ -20,21 +20,13 @@ void init_tree(struct tree *tree)
   tree->rays = NULL;
 
   /* Init expansion to "0" */
+	memset(tree->expansion, 0, MAX_EXPANSION_SIZE);
   tree->exp_size = 1;
-  /*  tree->expansion = malloc(1); */
-
-  /* I could do 
-   *t1.expansion = 0;
-   but this is more instructive */
-  strncpy(tree->expansion, "0", 1);
-  chars_to_rule(tree->expansion, 1, 1);
-
 }
 
 void free_tree(struct tree *tree)
 {
   reset_tree(tree);
-
   tree->exp_size = 0;
 
   if(tree->branches) {  
@@ -54,9 +46,8 @@ void free_tree(struct tree *tree)
 
 void reset_tree(struct tree *tree)
 {
-  tree->exp_size = 0;
-  tree->expansion[0] = '\0';
-
+  tree->exp_size = 1;
+	memset(tree->expansion, 0, MAX_EXPANSION_SIZE);
   tree->iterations = 0;
   
   if(tree->branches) {  
@@ -143,7 +134,11 @@ void gen_rays(struct tree *tree)
 int leaf_ray_intersect(struct line *leaf, struct ray *ray, struct point *p)
 {
 	/* if there is no intersection, return 0 */
-	if(!intersect(leaf, ray, p))
+	struct line ray_vec;
+	ray_vec.start = ray->origin;
+	ray_vec.end = ray->direction;
+
+	if(!intersect(leaf, &ray_vec, p))
 		return 0;
 
 	/* check to see if the intersection is on the right end

@@ -29,4 +29,4 @@ void get_intersection(struct line_eq *l1, struct line_eq *l2,
 
 int ray_intersects(struct ray *ray, struct line *line, struct point *itsec);
 
-
+int intersect(struct line *l1, struct line *l2, struct point *p);
