@@ -10,6 +10,7 @@ int uniform_select(int n);
 
 int roulette_select(float *weights, int n_weights);
 
+void invert_weights(float *weights, int nweights, float *invert_weights);
 void generate_weights(struct tree *trees, int n_trees, float *weights);
 
 void crossover(struct tree *tree1, struct tree *tree2, struct tree *offspring);

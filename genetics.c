@@ -15,6 +15,18 @@ int roulette_select(float *weights, int n_weights)
   return w;
 }
 
+void invert_weights(float *weights, int nweights, float *inverted_weights)
+{
+	int i;
+	float total = 0.0f;
+	for(i = 0; i < nweights; ++i) 
+		total += inverted_weights[i] = 1.0f - weights[i];
+	
+	for(i = 0; i < nweights; ++i)
+		inverted_weights[i] /= total;
+		
+}
+
 void generate_weights(struct tree *trees, int n_trees, float *weights)
 {
   int i;
