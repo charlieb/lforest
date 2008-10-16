@@ -88,8 +88,6 @@ void half_tree(int its)
  
 }
 
-
-
 void test()
 {
   struct tree trees[N_TREES];
@@ -102,7 +100,7 @@ void test()
   init_forest(trees);
 
   for(i=0; draw_ret == 0; ++i) {
-    iterate_single_light_forest(trees);
+    iterate_forest(trees);
     draw_ret = draw_forest(trees, &screen);
     breed_forest(trees);
   }

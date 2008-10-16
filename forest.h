@@ -23,7 +23,6 @@ int pick_neighbour(int parent);
 void init_sapling(struct tree* tree);
 void init_forest(struct tree trees[N_TREES]);
 void iterate_forest(struct tree trees[N_TREES]);
-void iterate_single_light_forest(struct tree trees[N_TREES]);
 void breed_forest(struct tree trees[N_TREES]);
 int draw_forest(struct tree trees[N_TREES], SDL_Surface **screen);
 
