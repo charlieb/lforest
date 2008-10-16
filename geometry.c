@@ -45,7 +45,7 @@ float cos_cache(int angle)
       table[i] = cos(i*M_PI/180);
   }
 
-  return table[angle];
+  return table[angle % 360];
 }
 
 float sin_cache(int angle)
@@ -60,7 +60,7 @@ float sin_cache(int angle)
       table[i] = sin(i*M_PI/180);
   }
 
-  return table[angle];
+  return table[angle % 360];
 }
 
 void print_point(struct point *p)
