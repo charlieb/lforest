@@ -6,6 +6,10 @@ SOURCES=$(wildcard *.c)
 OBJECTS=$(SOURCES:.c=.o)
 DEST=bin
 
+.PHONY: check-syntax
+check-syntax:
+	$(CC) $(CFLAGS) $(INCLUDES) -fsyntax-only $(CHK_SOURCES)
+
 .c.o:
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
