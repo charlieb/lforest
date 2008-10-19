@@ -7,11 +7,16 @@ void init_rule_set(struct rule_set *rules)
 {
   if(rules->num_rules == 0) rules->rules = NULL;
   else rules->rules = malloc(rules->rule_size * rules->num_rules);
+
+	printf("Inited rule_set @ %p\n", rules->rules);
 }
 
 void free_rule_set(struct rule_set *rules)
 {
-  if(rules->rules) free(rules->rules);
+	printf("Freed rule_set @ %p\n", rules->rules);
+  if(rules->rules) 
+		free(rules->rules);	
+	rules->rules = NULL;
 }
 
 char* get_rule(int rule_no, struct rule_set *rules)

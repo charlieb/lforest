@@ -63,8 +63,6 @@ void perfect_tree()
   
   gen_branches(&tree);
   /*  print_leaves(&tree); */
-  score_tree(&tree);
- 
 }
 
 void half_tree(int its)
@@ -84,8 +82,6 @@ void half_tree(int its)
   
   gen_branches(&tree);
   /* print_leaves(&tree); */
-  score_tree(&tree);
- 
 }
 
 void test()
@@ -107,9 +103,9 @@ void test()
 
   printf("%i iterations\n", i);
   
-  for(i=0; i < N_TREES; ++i)
+	for(i=0; i < N_TREES; ++i)
     free_tree(&trees[i]);
-
+		
   SDL_FreeSurface(screen);
 }
 

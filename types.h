@@ -32,13 +32,14 @@ struct tree {
   int exp_size;
 
   struct line *branches;
+	/* n_branches is the total number of branches: leaves and non-leaves alike */
   int n_branches;
-  /* leaves => lines[leaves[n]] */
+  /* leaves => branches[leaves[n]] */
   int *leaves;
+	/* n_leaves is the number of branches that are leaves */
   int n_leaves;
-
-  struct ray *rays;
-  int n_rays;
+	/* amount of memory allocated to leaves */
+	int leaf_space;
 
   int score;
 	int next_score;

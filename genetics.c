@@ -37,8 +37,6 @@ void generate_weights(struct tree *trees, int n_trees, float *weights)
     /*    printf("score[%i] = %i : %f\n", i, trees[i].score, weights[i]); */
   }
 }
-
-
 void crossover(struct tree *tree1, struct tree *tree2, struct tree *offspring)
 {
   int length = tree1->seed.rule_size * tree1->seed.num_rules;
@@ -54,7 +52,8 @@ void crossover(struct tree *tree1, struct tree *tree2, struct tree *offspring)
   init_rule_set(&offspring->seed);
 
   /* crossover */
-  cross_point = (int)(length * (rand() / (float)RAND_MAX));
+  cross_point = tree1->seed.rule_size * 
+		(int)(tree1->seed.num_rules * (rand() / (float)RAND_MAX));
   /*  printf("Crossover at %i\n", cross_point); */
   memcpy(offspring->seed.rules, tree1->seed.rules, cross_point);
   memcpy(offspring->seed.rules + cross_point, tree2->seed.rules + cross_point,

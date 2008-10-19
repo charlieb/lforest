@@ -32,11 +32,11 @@ void gen_branches(struct tree* tree)
 
   for(i=0; i < tree->exp_size; ++i) {
     /* printf("(%f, %f) @ %i : %i : %c\n", 
-	       turtle_stack[t_stack_idx].x, 
-	       turtle_stack[t_stack_idx].y,
-	       turtle_stack[t_stack_idx].angle,
-	       tree->expansion[i],
-	       tree->expansion[i]);
+			 turtle_stack[t_stack_idx].x, 
+			 turtle_stack[t_stack_idx].y,
+			 turtle_stack[t_stack_idx].angle,
+			 tree->expansion[i],
+			 tree->expansion[i]);
     */
     switch(tree->expansion[i]) {
     case DRAW_CHAR:
@@ -50,12 +50,12 @@ void gen_branches(struct tree* tree)
     case TURN_CL:
       turtle_stack[t_stack_idx].angle += angle_inc;
       if(turtle_stack[t_stack_idx].angle >= 360)
-	turtle_stack[t_stack_idx].angle = 0;
+				turtle_stack[t_stack_idx].angle = 0;
       break;
     case TURN_ACL:
       turtle_stack[t_stack_idx].angle -= angle_inc;
       if(turtle_stack[t_stack_idx].angle < 0)
-	turtle_stack[t_stack_idx].angle = 360 - angle_inc;
+				turtle_stack[t_stack_idx].angle = 360 - angle_inc;
       break;
     case PUSH_CHAR:
       if(t_stack_idx == 255) break;
@@ -103,58 +103,54 @@ void find_leaves(struct tree *tree)
   int last_draw = -1;
   int last_draw_depth = 0;
   int paren_depth = 0;
-  int leaf_no = 0;
 
+	tree->n_leaves = 0;
   for(i=0; i < tree->exp_size; ++i)
     switch(tree->expansion[i])
       {
       case DRAW_CHAR: 
-	last_draw_depth = paren_depth;
-	last_draw = draws++;
-	break;
+				last_draw_depth = paren_depth;
+				last_draw = draws++;
+				break;
       case PUSH_CHAR:
-	paren_depth++;
-	break;
+				paren_depth++;
+				break;
       case POP_CHAR:
-	/* ignore extra POPs */
-	if(paren_depth > 0) {
-	  if(last_draw != -1 && last_draw_depth == paren_depth) {
-	    /*
-	    printf("Found line[%i] is leaf[%i] at char[%i]\n", 
-		   last_draw, leaf_no, i);
-	    */
-	    if(leaf_no >= tree->n_leaves) {
-	      tree->n_leaves += LEAF_BLOCK_SIZE;
-	      tree->leaves = realloc(tree->leaves, 
-				     tree->n_leaves * sizeof(int));
-	    }
-	    /* and add the leaf we found to the list */
-	    tree->leaves[leaf_no++] = last_draw;
-	    last_draw = -1;
-	  }
-	  paren_depth--;
-	}
-	break;
+				/* ignore extra POPs */
+				if(paren_depth > 0) {
+					if(last_draw != -1 && last_draw_depth == paren_depth) {
+						/*
+							printf("Found line[%i] is leaf[%i] at char[%i]\n", 
+							last_draw, leaf_no, i);
+						*/
+						if(tree->n_leaves >= tree->leaf_space) {
+							tree->leaf_space += LEAF_BLOCK_SIZE;
+							tree->leaves = realloc(tree->leaves, 
+																		 tree->leaf_space * sizeof(int));
+						}
+						/* and add the leaf we found to the list */
+						tree->leaves[tree->n_leaves++] = last_draw;
+						last_draw = -1;
+					}
+					paren_depth--;
+				}
+				break;
       }
 
   /* The last draw is always a leaf */
   if(last_draw != -1) {
     /*
-    printf("Found line[%i] is leaf[%i] at char[%i]\n", 
-	   last_draw, leaf_no, i);
+			printf("Found line[%i] is leaf[%i] at char[%i]\n", 
+			last_draw, leaf_no, i);
     */
-    if(leaf_no >= tree->n_leaves) {
-      tree->n_leaves += LEAF_BLOCK_SIZE;
+    if(tree->n_leaves >= tree->leaf_space) {
+      tree->leaf_space += LEAF_BLOCK_SIZE;
       tree->leaves = realloc(tree->leaves, 
-			     tree->n_leaves * sizeof(int));
+														 tree->leaf_space * sizeof(int));
     }
     /* and add the leaf we found to the list */
-    tree->leaves[leaf_no++] = last_draw;
+    tree->leaves[tree->n_leaves++] = last_draw;
   }
-
-  /* Set the correct number of leaves and free unused memory */
-  tree->n_leaves = leaf_no;
-  tree->leaves = realloc(tree->leaves, tree->n_leaves * sizeof(int));
 }
 
 void print_leaves(struct tree* tree)
@@ -162,10 +158,10 @@ void print_leaves(struct tree* tree)
   int i;
   for(i=0; i < tree->n_leaves; ++i) {
     printf("(%1.3f, %1.3f)->(%1.3f, %1.3f)\n", 
-	   tree->branches[tree->leaves[i]].start.x, 
-	   tree->branches[tree->leaves[i]].start.y,
-	   tree->branches[tree->leaves[i]].end.x,
-	   tree->branches[tree->leaves[i]].end.y);
+					 tree->branches[tree->leaves[i]].start.x, 
+					 tree->branches[tree->leaves[i]].start.y,
+					 tree->branches[tree->leaves[i]].end.x,
+					 tree->branches[tree->leaves[i]].end.y);
   }
 }
 
@@ -174,8 +170,8 @@ void print_branches(struct tree* tree)
   int i;
   for(i=0; i < tree->n_branches; ++i) {
     printf("(%1.3f, %1.3f)->(%1.3f, %1.3f)\n", 
-	   tree->branches[i].start.x, tree->branches[i].start.y,
-	   tree->branches[i].end.x, tree->branches[i].end.y);
+					 tree->branches[i].start.x, tree->branches[i].start.y,
+					 tree->branches[i].end.x, tree->branches[i].end.y);
   }
 }
 /*  ---- turtle commands ----  */

@@ -41,10 +41,6 @@ void grow_sapling(struct tree* tree, int iterations)
 
 void init_sapling(struct tree* tree)
 {
-  tree->seed.rule_size = 7;
-  tree->seed.num_rules = 5;
-  init_rule_set(&tree->seed);
-  init_tree(tree);
   tree->score = 5;
 	tree->next_score = 10;
   randomize_tree(tree);
@@ -57,8 +53,10 @@ void init_forest(struct tree trees[N_TREES])
 
   srandom((unsigned)time(NULL));
   
-  for(i=0; i < N_TREES; ++i) 
+  for(i=0; i < N_TREES; ++i) {
+		init_tree(&trees[i]);
     init_sapling(&trees[i]);
+	}
 }
 
 void light_trees(struct tree trees[N_TREES], int nlights, int nrays)
@@ -68,8 +66,9 @@ void light_trees(struct tree trees[N_TREES], int nlights, int nrays)
 	struct point itsec;
 	float ray_angle, ray_angle_inc =	ray_angle_inc = 360 / (float)nrays;
 	float closest, distance;
-	int closest_leaf, closest_tree;
-	int li, r, t, le;
+	int closest_tree = 0;
+	char leaf = 0;
+	int b, r, t, li;
 	
 	for(li = 0; li < nlights; ++li) {
 		ray.origin.x = 640 * (float)rand() / (float)RAND_MAX;
@@ -83,23 +82,19 @@ void light_trees(struct tree trees[N_TREES], int nlights, int nrays)
 
 			closest = FLT_MAX;
 			for(t = 0; t < N_TREES; ++t)
-				for(le = 0; le < trees[t].n_leaves; ++le) {
-					abs_leaf = trees[t].branches[trees[t].leaves[le]];
-					abs_leaf.start.x += trees[t].pos.x;
-					abs_leaf.start.y += trees[t].pos.y;
-					abs_leaf.end.x += trees[t].pos.x;
-					abs_leaf.end.y += trees[t].pos.y;
+				for(b = 0; b < trees[t].n_branches; ++b) {
+					absolute_branch(&trees[t], b, &abs_leaf);
 					if(leaf_ray_intersect(&abs_leaf, &ray, &itsec)) {
 						distance = dist(&ray.origin, &itsec);
 						if(distance < closest) {
 							closest = distance;
 							closest_tree = t;
-							closest_leaf = le;
+							leaf = is_leaf(&trees[t], b);
 						}
 					}
 				}
 			
-			if(closest < FLT_MAX) {
+			if(leaf && closest < FLT_MAX) {
 				/*printf("%i, ", closest_tree);*/
 				trees[closest_tree].score++;
 			}
@@ -109,20 +104,23 @@ void light_trees(struct tree trees[N_TREES], int nlights, int nrays)
 
 void iterate_forest(struct tree trees[N_TREES])
 {
-	const int nrays = 250, nlights = 10;
+	const int nrays = 50, nlights = 50;
 	int i;
 
 	light_trees(trees, nlights, nrays);
 
-	for(i = 0; i < N_TREES; ++i)
+	for(i = 0; i < N_TREES; ++i) {
+		trees[i].score -= 
+			MAX(1, 
+					trees[i].n_leaves * 0.05 + (trees[i].n_branches - trees[i].n_leaves) * 0.1);
+
     if(trees[i].score >= trees[i].next_score) {
       trees[i].iterations++;
       expand_rule(trees[i].expansion, &trees[i].exp_size, &trees[i].seed);
       gen_branches(&trees[i]);
       trees[i].next_score = 1 + trees[i].next_score * 2;
     }
-    else
-      trees[i].score--;
+	}
 
 	/* if your score is zero, you DIE */
 	/* If a tree dies it gets randomly re-initialized */
@@ -144,7 +142,7 @@ void breed_forest(struct tree trees[N_TREES])
   int replace, parent1, parent2, child;
 	float weights[N_TREES], inverted_weights[N_TREES];
 	char used[N_TREES];
-  
+
 	memset(used, 0, N_TREES);
   generate_weights(trees, N_TREES, weights);
 	invert_weights(weights, N_TREES, inverted_weights);
@@ -157,19 +155,21 @@ void breed_forest(struct tree trees[N_TREES])
       parent1 = roulette_select(weights, N_TREES);
     
 		parent2 = child;
-    while(child == parent2 || parent1 == parent2)
+    while(child == parent2)
       parent2 = roulette_select(weights, N_TREES);
 		
     /*parent2 = pick_neighbour(parent1, trees);*/
     /*child = pick_neighbour(parent1, trees);*/
 		/*
-    printf("Breeding: %i(%i) + %i(%i) = %i(%i)\n\n", 
+    printf("Breeding: %i(%i) + %i(%i) = %i(%i)\n", 
 	   parent1, trees[parent1].score,
 	   parent2, trees[parent2].score,
 	   child,   trees[child].score);
 		*/
     crossover(&trees[parent1], &trees[parent2], &trees[child]);
 
+		trees[child].score = 5;
+		trees[child].next_score = 10;
     grow_sapling(&trees[child], 1);
     gen_branches(&trees[child]);
   }

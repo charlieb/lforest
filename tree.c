@@ -2,6 +2,10 @@
 
 void init_tree(struct tree *tree)
 {
+  tree->seed.rule_size = 7;
+  tree->seed.num_rules = 5;
+  init_rule_set(&tree->seed);
+
   tree->iterations = 0;
   tree->exp_size = 0;
 
@@ -10,14 +14,7 @@ void init_tree(struct tree *tree)
   
   tree->leaves = NULL;
   tree->n_leaves = 0;
-
-  tree->score = 0;
-
-  tree->pos.x = 0;
-  tree->pos.y = 0;
-
-  tree->n_rays = 0;
-  tree->rays = NULL;
+	tree->leaf_space = 0;
 
   /* Init expansion to "0" */
 	memset(tree->expansion, 0, MAX_EXPANSION_SIZE);
@@ -28,19 +25,6 @@ void free_tree(struct tree *tree)
 {
   reset_tree(tree);
   tree->exp_size = 0;
-
-  if(tree->branches) {  
-    free(tree->branches);
-    tree->branches = NULL;
-  }
-  tree->n_branches = 0;
-  
-  if(tree->leaves) {
-    free(tree->leaves);
-    tree->leaves = NULL;
-  }
-  tree->n_leaves = 0;
-
   free_rule_set(&tree->seed);
 }
 
@@ -55,22 +39,12 @@ void reset_tree(struct tree *tree)
     tree->branches = NULL;
   }
   tree->n_branches = 0;
-  
-  if(tree->leaves) {
-    free(tree->leaves);
-    tree->leaves = NULL;
-  }
-  tree->n_leaves = 0;
+	tree->n_leaves = 0;
 
-  if(tree->rays) {
-    free(tree->rays);
-    /*
-    printf("freed rays\n");
-    fflush(NULL);
-    */
-    tree->rays = NULL;
-  }
-  tree->n_rays = 0;
+  tree->score = 0;
+
+  tree->pos.x = 0;
+  tree->pos.y = 0;
 }
 
 void randomize_tree(struct tree *tree)
@@ -79,56 +53,6 @@ void randomize_tree(struct tree *tree)
   reset_tree(tree);
   /* Generate random rules */
   random_rule_set(&tree->seed);
-}
-
-void gen_rays(struct tree *tree)
-{
-  int i;
-  struct line vec;
-  float ray_angle_inc, ray_angle = 0.0;
-
-  if(tree->rays) {
-    free(tree->rays);
-    /*
-    printf("freed rays\n");
-    fflush(NULL);
-    */
-  }
-  tree->rays = NULL;
-  if(tree->n_rays != 0) tree->n_rays = 0;
-  /*  if(tree->n_rays > 0 || tree->rays != NULL) return; */
-
-  /* n_rays should depend on n_leaves */
-  tree->n_rays = 2 * tree->iterations * tree->iterations;
-
-  tree->rays = malloc(tree->n_rays * sizeof(struct ray));
-  /*  printf("malloc rays\n");
-      fflush(NULL);
-  */
-  if(tree->rays == NULL) {
-    printf("Failed to allocate memory for rays\n");
-    exit(-1);
-  }
-
-  ray_angle_inc = 360 / (float)tree->n_rays;
-
-  /* regular ray distribution */
-  for(i=0; i < tree->n_rays; ++i) {
-    vec.start.x = tree->pos.x + 5 - 10 * (float)rand() / (float)RAND_MAX;
-    vec.start.y = tree->pos.y + 5 - 10 * (float)rand() / (float)RAND_MAX;
-    ray_angle += ray_angle_inc;
-    vec.end.x = sin_cache((int)ray_angle);
-    vec.end.y = cos_cache((int)ray_angle);
-    get_equation(&vec, &tree->rays[i].ray_eq);
-    tree->rays[i].direction = vec.end;   
-    /*
-    printf("Ray: %fx + %f: (%f, %f)\n", 
-	   tree->rays[i].ray_eq.m, tree->rays[i].ray_eq.c,
-	   tree->rays[i].direction.x, tree->rays[i].direction.y);
-    */
-  }
-
-  /* random ray distribution perhaps?? */
 }
 
 int leaf_ray_intersect(struct line *leaf, struct ray *ray, struct point *p)
@@ -211,3 +135,20 @@ int leaf_catches_ray(struct tree *tree, struct ray *ray)
   return closest_leaf;
 }
 
+char is_leaf(struct tree *tree, int branch)
+{
+	int i;
+	for(i = 0; i < tree->n_leaves; ++i)
+		if(branch == tree->leaves[i])
+			return 1;
+	return 0;
+}
+
+void absolute_branch(struct tree *tree, int branch, struct line *abs_branch)
+{
+	*abs_branch = tree->branches[branch];
+	abs_branch->start.x += tree->pos.x;
+	abs_branch->start.y += tree->pos.y;
+	abs_branch->end.x += tree->pos.x;
+	abs_branch->end.y += tree->pos.y;
+}
