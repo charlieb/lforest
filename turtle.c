@@ -1,8 +1,8 @@
 #include "turtle.h"
 
-struct turtle turtle_stack[256];
-int angle_inc = 10;
-int draw_length = 10;
+static struct turtle turtle_stack[256];
+static int angle_inc = 10;
+static int draw_length = 5; //10;
 
 void gen_branches(struct tree* tree)
 {
@@ -12,16 +12,13 @@ void gen_branches(struct tree* tree)
   int line_ct = 0;
 
   if(branches > tree->n_branches) {
-    if(tree->branches) free(tree->branches);
-    tree->branches = malloc(branches * sizeof(struct line));
-    if(tree->branches) 
-      tree->n_branches = branches;
-    else {
+		tree->n_branches = branches;
+    tree->branches = realloc(tree->branches, branches * sizeof(struct line));
+    if(NULL == tree->branches) {
       printf("Failed to allocate memory for branches\n");
       exit(-1);
     }
-      
-  }
+	}
 
   /* Reset the turtle */
   turtle_stack[0].x = 0.0;

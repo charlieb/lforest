@@ -12,8 +12,8 @@
 #include "genetics.h"
 #include "lines-sdl.h"
 
-#define WIDTH 1//6 //32
-#define HEIGHT 1//2 //24
+#define WIDTH 16 //32
+#define HEIGHT 12 //24
 #define N_TREES WIDTH * HEIGHT
 #define TREE_SPACE 40 //20
 

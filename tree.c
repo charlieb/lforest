@@ -24,6 +24,7 @@ void init_tree(struct tree *tree)
 void free_tree(struct tree *tree)
 {
   reset_tree(tree);
+	free(tree->leaves);
   tree->exp_size = 0;
   free_rule_set(&tree->seed);
 }
@@ -42,17 +43,6 @@ void reset_tree(struct tree *tree)
 	tree->n_leaves = 0;
 
   tree->score = 0;
-
-  tree->pos.x = 0;
-  tree->pos.y = 0;
-}
-
-void randomize_tree(struct tree *tree)
-{
-  /* Make sure the tree's empty */
-  reset_tree(tree);
-  /* Generate random rules */
-  random_rule_set(&tree->seed);
 }
 
 int leaf_ray_intersect(struct line *leaf, struct ray *ray, struct point *p)
