@@ -15,7 +15,7 @@
 #define WIDTH 16 //32
 #define HEIGHT 12 //24
 #define N_TREES WIDTH * HEIGHT
-#define TREE_SPACE 40 //20
+#define TREE_SPACE 35 //20
 
 void index2coords(int index, int *x, int *y);
 int coords2index(int x, int y);

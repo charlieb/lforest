@@ -31,9 +31,9 @@ void generate_weights(struct tree *trees, int n_trees, float *weights)
 {
   int i;
   float total = 0.0;
-  for(i=0; i < n_trees; ++i) total += trees[i].score;
-  for(i=0; i < n_trees; ++i) {
-    weights[i] = (float)trees[i].score / total;
+  for(i = 0; i < n_trees; ++i) total += MAX(0.01, trees[i].score);
+  for(i = 0; i < n_trees; ++i) {
+    weights[i] = MAX(0.01, (float)trees[i].score) / total;
     /*    printf("score[%i] = %i : %f\n", i, trees[i].score, weights[i]); */
   }
 }

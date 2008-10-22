@@ -109,6 +109,20 @@ void iterate_forest(struct tree trees[N_TREES])
 	const int nrays = 100, nlights = 100;
 	int i;
 
+	/* if your score is zero, you DIE */
+	/* If a tree dies it gets randomly re-initialized */
+	for(i = 0; i < N_TREES; ++i) {
+		//printf("trees[%i].score = %i\n", i, trees[i].score);
+		if(trees[i].score <= 0) {
+			/*if(n_dead_trees < N_TREES)
+				dead_trees[n_dead_trees++] = i;*/
+			//printf("trees[%i] died\n", i);
+			reset_tree(&trees[i]);
+			init_sapling(&trees[i]);
+			gen_branches(&trees[i]);
+		}
+	}
+
 	light_trees(trees, nlights, nrays);
 
 	for(i = 0; i < N_TREES; ++i) {
@@ -123,20 +137,6 @@ void iterate_forest(struct tree trees[N_TREES])
       gen_branches(&trees[i]);
       trees[i].next_score = 1 + trees[i].next_score * 2;
     }
-	}
-
-	/* if your score is zero, you DIE */
-	/* If a tree dies it gets randomly re-initialized */
-	for(i = 0; i < N_TREES; ++i) {
-		//printf("trees[%i].score = %i\n", i, trees[i].score);
-		if(trees[i].score <= 0) {
-			/*if(n_dead_trees < N_TREES)
-				dead_trees[n_dead_trees++] = i;*/
-			//printf("trees[%i] died\n", i);
-			reset_tree(&trees[i]);
-			init_sapling(&trees[i]);
-			gen_branches(&trees[i]);
-		}
 	}
 }
 
