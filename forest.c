@@ -106,14 +106,14 @@ void light_trees(struct tree trees[N_TREES], int nlights, int nrays)
 
 void iterate_forest(struct tree trees[N_TREES])
 {
-	const int nrays = 100, nlights = 100;
+	const int nrays = 20, nlights = 500;
 	int i;
 
 	/* if your score is zero, you DIE */
 	/* If a tree dies it gets randomly re-initialized */
 	for(i = 0; i < N_TREES; ++i) {
 		//printf("trees[%i].score = %i\n", i, trees[i].score);
-		if(trees[i].score <= 0) {
+		if(trees[i].score <= -10) {
 			/*if(n_dead_trees < N_TREES)
 				dead_trees[n_dead_trees++] = i;*/
 			//printf("trees[%i] died\n", i);
@@ -122,13 +122,13 @@ void iterate_forest(struct tree trees[N_TREES])
 			gen_branches(&trees[i]);
 		}
 	}
-
+	
 	light_trees(trees, nlights, nrays);
 
 	for(i = 0; i < N_TREES; ++i) {
 		trees[i].score -= 
 			MAX(1, 
-					trees[i].n_leaves * 0.25 + 
+					trees[i].n_leaves * 0.5 + 
 					(trees[i].n_branches - trees[i].n_leaves) * 1.00);
 
     if(trees[i].score >= trees[i].next_score) {
@@ -147,9 +147,24 @@ void breed_forest(struct tree trees[N_TREES])
 
   generate_weights(trees, N_TREES, weights);
 	invert_weights(weights, N_TREES, inverted_weights);
-  for(replace = 0; replace < (int)(N_TREES * 0.125); ++replace) {
+
+	//  for(replace = 0; replace < (int)(N_TREES * 0.125); ++replace) {
+	for(replace = 0; replace < N_TREES; ++replace) {
+
+		if(trees[replace].score > 0)
+			continue;
+		else if(random() / (float)RAND_MAX > 0.25) {
+			/* some dead trees randomly re-initialized to introduce "fresh blood" */
+			reset_tree(&trees[replace]);
+			init_sapling(&trees[replace]);
+			gen_branches(&trees[replace]);
+			continue;
+		}
+		else
+			child = replace;
+
     /* Select the parents and a place for the child */
-		child = roulette_select(inverted_weights, N_TREES);
+		//child = roulette_select(inverted_weights, N_TREES);
     
     parent1 = child;
     while(child == parent1)
