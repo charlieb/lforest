@@ -12,8 +12,8 @@
 #include "genetics.h"
 #include "lines-sdl.h"
 
-#define WIDTH 640 //32
-#define HEIGHT 480 //24
+#define WIDTH 640
+#define HEIGHT 480
 #define N_TREES 100
 
 void index2coords(int index, int *x, int *y);
@@ -25,4 +25,6 @@ void iterate_forest(struct tree trees[N_TREES]);
 void breed_forest(struct tree trees[N_TREES]);
 int draw_forest(struct tree trees[N_TREES], SDL_Surface **screen);
 
+void write_forest(FILE *file, struct tree trees[N_TREES]);
+void read_forest(FILE *file, struct tree trees[N_TREES]);
 #endif

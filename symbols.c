@@ -110,8 +110,7 @@ void random_rule_set(struct rule_set *rules)
 
   for(i=0; i < rules->rule_size * rules->num_rules; ++i) {
     /* special chars +-()! */ 
-    rand_char = (int)floor((5 + rules->num_rules) * 
-			   (rand() / (float)RAND_MAX));
+    rand_char = (int)((5 + rules->num_rules) * (rand() / (float)RAND_MAX));
     /*printf("%i: %i", i, rand_char); */
     
     if(rand_char >= rules->num_rules)
@@ -128,4 +127,13 @@ void random_rule_set(struct rule_set *rules)
   /*
   print_rule_set(rules);  
   */
+}
+
+int is_terminal(char exp[MAX_EXPANSION_SIZE], int exp_size, int nrules)
+{
+	int i;
+	for(i = 0; i < exp_size; ++i)
+		if(exp[i] < nrules)
+			return 0;
+	return 1;
 }

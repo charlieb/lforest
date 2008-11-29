@@ -142,3 +142,52 @@ void absolute_branch(struct tree *tree, int branch, struct line *abs_branch)
 	abs_branch->end.x += tree->pos.x;
 	abs_branch->end.y += tree->pos.y;
 }
+
+int terminal_tree(struct tree *tree)
+{
+	return is_terminal(tree->expansion, tree->exp_size, tree->seed.num_rules);
+}
+
+void write_tree(FILE *file, struct tree *tree)
+{
+	fwrite((void*)&tree->pos, sizeof(struct point), 1, file);
+	fwrite((void*)&tree->seed.rule_size, sizeof(int), 1, file);
+	fwrite((void*)&tree->seed.num_rules, sizeof(int), 1, file);
+	fwrite((void*)tree->seed.rules, 
+				 tree->seed.num_rules * tree->seed.rule_size, 1, file);
+	fwrite((void*)&tree->iterations, sizeof(int), 1, file);
+	fwrite((void*)&tree->score, sizeof(int), 1, file);
+	fwrite((void*)&tree->next_score, sizeof(int), 1, file);
+
+	/*
+	print_point(&tree->pos);
+	printf(": %i / %i\n", tree->score, tree->next_score);
+	print_rule_set(&tree->seed);
+	*/
+}
+
+void read_tree(FILE *file, struct tree *tree)
+{
+	int i;
+
+	reset_tree(tree);
+
+	fread((void*)&tree->pos, sizeof(struct point), 1, file);
+	fread((void*)&tree->seed.rule_size, sizeof(int), 1, file);
+	fread((void*)&tree->seed.num_rules, sizeof(int), 1, file);
+	init_rule_set(&tree->seed);
+	fread((void*)tree->seed.rules, 
+				 tree->seed.num_rules * tree->seed.rule_size, 1, file);
+	fread((void*)&tree->iterations, sizeof(int), 1, file);
+	fread((void*)&tree->score, sizeof(int), 1, file);
+	fread((void*)&tree->next_score, sizeof(int), 1, file);
+
+	for(i = 0; i < tree->iterations; ++i)
+		expand_rule(tree->expansion, &tree->exp_size, &tree->seed);
+	gen_branches(tree);
+	/*
+	print_point(&tree->pos);
+	printf(": %i / %i\n", tree->score, tree->next_score);
+	print_rule_set(&tree->seed);
+	*/
+}

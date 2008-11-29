@@ -93,7 +93,7 @@ void light_trees(struct tree trees[N_TREES], int nrays)
 
 void iterate_forest(struct tree trees[N_TREES])
 {
-	const int nrays = 20, nlights = 500;
+	const int nrays = 10000;
 	int i;
 
 	/* if your score is zero, you DIE */
@@ -110,7 +110,7 @@ void iterate_forest(struct tree trees[N_TREES])
 		}
 	}
 	
-	light_trees(trees, nlights, nrays);
+	light_trees(trees, nrays);
 
 	for(i = 0; i < N_TREES; ++i) {
 		trees[i].score -= 
@@ -183,4 +183,21 @@ void breed_forest(struct tree trees[N_TREES])
 int draw_forest(struct tree trees[N_TREES], SDL_Surface **screen)
 {
   return draw_trees(trees, N_TREES, screen);
+}
+
+void write_forest(FILE *file, struct tree trees[N_TREES])
+{
+	int i = N_TREES;
+	fwrite((void*)&i, sizeof(int), 1, file);
+	for(i = 0; i < N_TREES; ++i)
+		write_tree(file, &trees[i]);
+}
+
+void read_forest(FILE *file, struct tree trees[N_TREES])
+{
+	int i = N_TREES;
+	/* atm N_TREES is a #define constant :( */
+	fread((void*)&i, sizeof(int), 1, file);
+	for(i = 0; i < N_TREES; ++i)
+		read_tree(file, &trees[i]);
 }

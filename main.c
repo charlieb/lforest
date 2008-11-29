@@ -92,10 +92,30 @@ void test()
 
   SDL_Surface *screen = NULL; 
 
+	FILE *forest_file = NULL;
+	char *home = getenv("HOME");
+	char *forest_filename = NULL;
+
+	forest_filename = malloc(strlen(home) + 10);
+	sprintf(forest_filename, "%s/.lforest", home);
+
 	memset(trees, 0, N_TREES * sizeof(struct tree));
   init_forest(trees);
 
-  for(i=0; draw_ret == 0; ++i) {
+	forest_file = fopen(forest_filename, "rb");
+	if(NULL == forest_file) {
+		printf("%s not found: using random trees\n", forest_filename);
+		fflush(NULL);
+	}
+	else {
+		printf("%s found: using saved trees\n", forest_filename);
+		fflush(NULL);
+		read_forest(forest_file, trees);
+		fclose(forest_file);
+		forest_file = NULL;
+	}
+
+  for(i = 0; draw_ret == 0; ++i) {
     iterate_forest(trees);
     draw_ret = draw_forest(trees, &screen);
     breed_forest(trees);
@@ -103,6 +123,16 @@ void test()
 
   printf("%i iterations\n", i);
   
+	forest_file = fopen(forest_filename, "wb");
+	
+	if(NULL == forest_file) 
+		printf("Failed to open %s: not saving\n", forest_filename);
+	else {
+		printf("saving to %s\n", forest_filename);
+		write_forest(forest_file, trees);
+		fclose(forest_file);
+	}
+
 	for(i=0; i < N_TREES; ++i)
     free_tree(&trees[i]);
 		

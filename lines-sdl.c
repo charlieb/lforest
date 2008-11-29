@@ -101,7 +101,7 @@ void draw_tree(struct tree *tree, SDL_Surface **surface)
 int draw_trees(struct tree trees[], int n_trees, SDL_Surface **surface)
 {
   int go = 1, i, tree, leaf;
-  static int cont = 1;
+  static int cont = -1;
   unsigned long colour;
   SDL_Event event;
 
@@ -136,7 +136,7 @@ int draw_trees(struct tree trees[], int n_trees, SDL_Surface **surface)
     while(SDL_PollEvent(&event)) 
       switch(event.type) {
       case SDL_QUIT: 
-				go = 0; 
+				return -1; 
 				break;
       case SDL_KEYDOWN:
 				switch (event.key.keysym.sym) {
@@ -148,12 +148,14 @@ int draw_trees(struct tree trees[], int n_trees, SDL_Surface **surface)
 					break;
 				case SDLK_c:
 					cont = -cont;
+					printf((cont < 0 ? "Paused\n" : "Unpaused\n"));
+					break;
 				default:
 					break;
 				}
       }
     if(cont > 0) go = 0;
-  }
+	}
 	
   return 0;
 

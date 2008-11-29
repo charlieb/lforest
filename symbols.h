@@ -27,4 +27,6 @@ void expand_rule(char exp[MAX_EXPANSION_SIZE],
 
 void random_rule_set(struct rule_set *rules);
 
+int is_terminal(char exp[MAX_EXPANSION_SIZE], int exp_size, int nrules);
+
 #endif
