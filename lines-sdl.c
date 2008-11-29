@@ -36,7 +36,7 @@ void draw_tree(struct tree *tree, SDL_Surface **surface)
 {
   int go = 1, i, leaf;
   unsigned long colour;
-  static int cont = -1;
+  static int cont = 1;
   SDL_Event event;
   SDL_Rect size;
   size.x = 0;
