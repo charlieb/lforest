@@ -11,24 +11,6 @@ int coords2index(int x, int y)
   return y * WIDTH + x;
 }
 
-int pick_neighbour(int parent)
-{
-  /* Is there an empty slot next to either of the parents? */
-  /* If it's in the first row don't check the UP */
-  int x, y, xoffset, yoffset;
-  index2coords(parent, &x, &y);
-  
-  xoffset = (int)((float)rand() / (float)RAND_MAX * 4.0 - 2.0);
-  while(x + xoffset < 0 || x + xoffset >= WIDTH)
-    xoffset = (int)((float)rand() / (float)RAND_MAX * 4.0 - 2.0);
-  
-  yoffset = (int)((float)rand() / (float)RAND_MAX * 4.0 - 2.0);
-  while(y + yoffset < 0 || y + yoffset >= HEIGHT) 
-    yoffset = (int)((float)rand() / (float)RAND_MAX * 4.0 - 2.0);
-
-  return coords2index(x + xoffset, y + yoffset);   
-}
-
 void grow_sapling(struct tree* tree, int iterations)
 {
  int init;
@@ -37,6 +19,9 @@ void grow_sapling(struct tree* tree, int iterations)
    expand_rule(tree->expansion, 
 	       &tree->exp_size, &tree->seed);
  tree->iterations = iterations;
+
+ tree->pos.x = (int)(WIDTH * (float)random() / RAND_MAX);
+ tree->pos.y = (int)(HEIGHT * (float)random() / RAND_MAX);
 }
 
 void init_sapling(struct tree* tree)
@@ -59,47 +44,49 @@ void init_forest(struct tree trees[N_TREES])
 	}
 }
 
-void light_trees(struct tree trees[N_TREES], int nlights, int nrays)
+int closest_hit(struct tree trees[N_TREES], struct ray *ray)
 {
-	struct ray ray;
+	float closest, distance;
+	int closest_tree = -1, leaf_no, t, b;
 	struct line abs_leaf;
 	struct point itsec;
-	float ray_angle, ray_angle_inc =	ray_angle_inc = 360 / (float)nrays;
-	float closest, distance;
-	int closest_tree = 0, leaf_no;
-	char leaf = 0;
-	int b, r, t, li;
-	
-	for(li = 0; li < nlights; ++li) {
-		ray.origin.x = 640 * (float)rand() / (float)RAND_MAX;
-		ray.origin.y = 480 * (float)rand() / (float)RAND_MAX;
-		ray_angle = 0.0;
-		/* regular ray distribution */
-		for(r = 0; r < nrays; ++r) {
-			ray_angle += ray_angle_inc;
-			ray.direction.x = sin_cache((int)ray_angle);
-			ray.direction.y = cos_cache((int)ray_angle);
 
-			closest = FLT_MAX;
-			for(t = 0; t < N_TREES; ++t)
-				//for(b = 0; b < trees[t].n_branches; ++b) {
-				for(b = 0; b < trees[t].n_leaves; ++b) {
-					leaf_no = trees[t].leaves[b];
-					absolute_branch(&trees[t], leaf_no, &abs_leaf);
-					if(leaf_ray_intersect(&abs_leaf, &ray, &itsec)) {
-						distance = dist(&ray.origin, &itsec);
-						if(distance < closest) {
-							closest = distance;
-							closest_tree = t;
-							leaf = 1;//is_leaf(&trees[t], b);
-						}
-					}
+	closest = FLT_MAX;
+	for(t = 0; t < N_TREES; ++t)
+		//for(b = 0; b < trees[t].n_branches; ++b) {
+		for(b = 0; b < trees[t].n_leaves; ++b) {
+			leaf_no = trees[t].leaves[b];
+			absolute_branch(&trees[t], leaf_no, &abs_leaf);
+			if(leaf_ray_intersect(&abs_leaf, ray, &itsec)) {
+				distance = dist(&ray->origin, &itsec);
+				if(distance < closest) {
+					closest = distance;
+					closest_tree = t;
 				}
-			
-			if(leaf && closest < FLT_MAX) {
-				/*printf("%i, ", closest_tree);*/
-				trees[closest_tree].score++;
 			}
+		}
+	return closest_tree;
+}
+
+void light_trees(struct tree trees[N_TREES], int nrays)
+{
+	struct ray ray;
+	float ray_angle;
+	int closest_tree = 0;
+	int r;
+	
+	for(r = 0; r < nrays; ++r) {
+		ray.origin.x = WIDTH * (float)rand() / (float)RAND_MAX;
+		ray.origin.y = HEIGHT * (float)rand() / (float)RAND_MAX;
+		//ray_angle = 0.0;
+		ray_angle = 360 * (float)rand() / RAND_MAX;
+		
+		ray.direction.x = sin_cache((int)ray_angle);
+		ray.direction.y = cos_cache((int)ray_angle);
+		closest_tree = closest_hit(trees, &ray);
+					
+		if(-1 != closest_tree) {
+			trees[closest_tree].score++;
 		}
 	}
 }
@@ -151,18 +138,21 @@ void breed_forest(struct tree trees[N_TREES])
 	//  for(replace = 0; replace < (int)(N_TREES * 0.125); ++replace) {
 	for(replace = 0; replace < N_TREES; ++replace) {
 
-		if(trees[replace].score > 0)
+		child = roulette_select(inverted_weights, N_TREES);
+
+		if(trees[child].score > 0)
 			continue;
 		else if(random() / (float)RAND_MAX > 0.25) {
 			/* some dead trees randomly re-initialized to introduce "fresh blood" */
-			reset_tree(&trees[replace]);
-			init_sapling(&trees[replace]);
-			gen_branches(&trees[replace]);
+			reset_tree(&trees[child]);
+			init_sapling(&trees[child]);
+			gen_branches(&trees[child]);
 			continue;
 		}
+		/*
 		else
 			child = replace;
-
+		*/
     /* Select the parents and a place for the child */
 		//child = roulette_select(inverted_weights, N_TREES);
     
@@ -192,13 +182,5 @@ void breed_forest(struct tree trees[N_TREES])
 
 int draw_forest(struct tree trees[N_TREES], SDL_Surface **screen)
 {
-  int w, h, wc, hc;
-
-  w = h = TREE_SPACE;
-  for(wc = 0; wc < WIDTH; ++wc)
-    for(hc = 0; hc < HEIGHT; ++hc) {
-      trees[wc * HEIGHT + hc].pos.x = (float)(TREE_SPACE + wc * w);
-      trees[wc * HEIGHT + hc].pos.y = (float)(TREE_SPACE + hc * h);
-    }
   return draw_trees(trees, N_TREES, screen);
 }

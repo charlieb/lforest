@@ -12,10 +12,9 @@
 #include "genetics.h"
 #include "lines-sdl.h"
 
-#define WIDTH 16 //32
-#define HEIGHT 12 //24
-#define N_TREES WIDTH * HEIGHT
-#define TREE_SPACE 35 //20
+#define WIDTH 640 //32
+#define HEIGHT 480 //24
+#define N_TREES 100
 
 void index2coords(int index, int *x, int *y);
 int coords2index(int x, int y);

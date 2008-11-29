@@ -1,6 +1,20 @@
 #ifndef L_SYS_TYPES_H
 #define L_SYS_TYPES_H
 
+struct config {
+	int nrays;
+	int nlights;
+	int screen_width;
+	int screen_height;
+	int forest_width;
+	int forest_height;
+	int tree_space;
+	float branch_cost;
+	float leaf_cost;
+	
+	
+};
+
 struct point {
   float x;
   float y;
