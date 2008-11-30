@@ -76,6 +76,12 @@ void print_line(struct line *line)
 	printf("\n");
 }
 
+void bisect_line(struct point *pt, struct line *line)
+{
+	pt->x = (line->start.x + line->end.x) / 2;
+	pt->y = (line->start.y + line->end.y) / 2;
+}
+
 float dist(struct point *p1, struct point *p2)
 {
   struct point pd;

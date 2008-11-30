@@ -17,6 +17,7 @@ int f_lt_eq(float a, float b);
 float cos_cache(int angle);
 float sin_cache(int angle);
 
+void bisect_line(struct point *pt, struct line *line);
 float dist(struct point *p1, struct point *p2);
 
 float mag(struct point *pt);
