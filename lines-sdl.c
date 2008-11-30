@@ -101,7 +101,7 @@ void draw_tree(struct tree *tree, SDL_Surface **surface)
 int draw_trees(struct tree trees[], int n_trees, SDL_Surface **surface)
 {
   int go = 1, i, tree, leaf;
-  static int cont = -1;
+  static int cont = 1;
   unsigned long colour;
   SDL_Event event;
 
