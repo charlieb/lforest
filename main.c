@@ -8,6 +8,7 @@
 #include "tree.h"
 #include "forest.h"
 #include "genetics.h"
+#include "kd-tree.h"
 
 void test_tree()
 {
@@ -114,6 +115,24 @@ void test()
 		fclose(forest_file);
 		forest_file = NULL;
 	}
+
+	/*****/
+	struct node *nodes;
+	int nnodes;
+	nodes_from_trees(trees, N_TREES, &nodes, &nnodes);
+
+	struct node **xnodes = malloc(nnodes * sizeof(struct node*));
+	struct node **ynodes = malloc(nnodes * sizeof(struct node*));
+	
+	sort_nodes(xnodes, ynodes, nodes, nnodes);
+	printf("Sorted %i branches, twice!\n", nnodes);
+	fflush(NULL);
+
+	struct kd_node kd_head;
+
+	build_kd_tree(xnodes, ynodes, nnodes, 1, &kd_head);
+
+	/*****/
 
   for(i = 0; draw_ret == 0; ++i) {
     iterate_forest(trees);
