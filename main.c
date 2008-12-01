@@ -47,22 +47,23 @@ void test_tree()
   /*  free_tree(&tree); */
 }
 
-void perfect_tree()
+void perfect_tree(struct tree *tree)
 {
-  struct tree tree;
-  /*  SDL_Surface *screen; */
+   /*  SDL_Surface *screen; */
 
-  init_tree(&tree);
-  tree.iterations = 17;
-  tree.exp_size = 34 * 4;
-  strncpy(tree.expansion,
-	  "(!(+++++++++!)---------!)+++++++++"
-	  "(!(+++++++++!)---------!)+++++++++"
-	  "(!(+++++++++!)---------!)+++++++++"
-	  "(!(+++++++++!)---------!)+++++++++",
-	  tree.exp_size);
+  init_tree(tree);
+	tree->pos.x = 100;
+	tree->pos.y = 100;
+  tree->iterations = 17;
+  tree->exp_size = 34 * 4;
+  strncpy(tree->expansion,
+					"(!(+++++++++!)---------!)+++++++++"
+					"(!(+++++++++!)---------!)+++++++++"
+					"(!(+++++++++!)---------!)+++++++++"
+					"(!(+++++++++!)---------!)+++++++++",
+					tree->exp_size);
   
-  gen_branches(&tree);
+  gen_branches(tree);
   /*  print_leaves(&tree); */
 }
 
@@ -83,6 +84,51 @@ void half_tree(int its)
   
   gen_branches(&tree);
   /* print_leaves(&tree); */
+}
+
+void test_kd_tree()
+{
+	struct tree tree;
+	struct node *nodes;
+	int nnodes;
+
+	perfect_tree(&tree);
+
+	nodes_from_trees(&tree, 1, &nodes, &nnodes);
+
+	struct node **xnodes = malloc(nnodes * sizeof(struct node*));
+	struct node **ynodes = malloc(nnodes * sizeof(struct node*));
+	
+	sort_nodes(xnodes, ynodes, nodes, nnodes);
+	printf("Sorted %i branches, twice!\n", nnodes);
+	fflush(NULL);
+	for(int i = 0; i < nnodes; ++i)
+		printf("(%f, %f)  (%f, %f)\n", 
+					 xnodes[i]->pt.x, xnodes[i]->pt.y,
+					 ynodes[i]->pt.x, ynodes[i]->pt.y);
+	fflush(NULL);
+	struct kd_node kd_head;
+
+	build_kd_tree(xnodes, ynodes, nnodes, 1, &kd_head);
+
+	free(xnodes);
+	free(ynodes);
+
+	struct point pt;
+	pt.x = 160.0; //(float)random() * 200 / RAND_MAX;
+	pt.y = 70.0; //(float)random() * 200 / RAND_MAX;
+	printf("(%f, %f)\n", pt.x, pt.y);
+
+	struct node *nearest_node = NULL;
+	nearest_node = nearest_naieve(nodes, nnodes, &pt);
+	printf("By full: (%f, %f) = %f\n",
+				 nearest_node->pt.x, nearest_node->pt.y,
+				 dist(&pt, &nearest_node->pt));
+	fflush(NULL);
+	nearest_node = nearest_by_tree(&kd_head, &pt);
+	printf("By tree: (%f, %f) = %f\n", nearest_node->pt.x, nearest_node->pt.y,
+				 dist(&pt, &nearest_node->pt));
+	fflush(NULL);
 }
 
 void test()
@@ -115,24 +161,6 @@ void test()
 		fclose(forest_file);
 		forest_file = NULL;
 	}
-
-	/*****/
-	struct node *nodes;
-	int nnodes;
-	nodes_from_trees(trees, N_TREES, &nodes, &nnodes);
-
-	struct node **xnodes = malloc(nnodes * sizeof(struct node*));
-	struct node **ynodes = malloc(nnodes * sizeof(struct node*));
-	
-	sort_nodes(xnodes, ynodes, nodes, nnodes);
-	printf("Sorted %i branches, twice!\n", nnodes);
-	fflush(NULL);
-
-	struct kd_node kd_head;
-
-	build_kd_tree(xnodes, ynodes, nnodes, 1, &kd_head);
-
-	/*****/
 
   for(i = 0; draw_ret == 0; ++i) {
     iterate_forest(trees);
@@ -168,6 +196,9 @@ int main(int argc, char **argv)
   /*
   test_tree();
   */
+	test_kd_tree();
+	return;
+
   test();
 
   printf("Normal Exit\n");

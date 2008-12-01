@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <float.h>
 
 #include "types.h"
 #include "geometry.h"
@@ -25,5 +26,11 @@ void nodes_from_trees(struct tree *trees, int ntrees,
 											struct node **nodes, int *nnodes);
 void sort_nodes(struct node **xnodes, struct node **ynodes,
 								struct node *nodes, int nnodes);
+
+void build_kd_tree(struct node **xnodes, struct node **ynodes, int nnodes, int dim,
+									 struct kd_node *current);
+
+struct node *nearest_by_tree(struct kd_node *root, struct point *pt);
+struct node *nearest_naieve(struct node *nodes, int nnodes, struct point *pt);
 
 #endif
