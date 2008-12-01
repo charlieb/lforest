@@ -114,21 +114,31 @@ void test_kd_tree()
 	free(xnodes);
 	free(ynodes);
 
-	struct point pt;
-	pt.x = 160.0; //(float)random() * 200 / RAND_MAX;
-	pt.y = 70.0; //(float)random() * 200 / RAND_MAX;
-	printf("(%f, %f)\n", pt.x, pt.y);
+	print_kd_tree(&kd_head);
 
-	struct node *nearest_node = NULL;
-	nearest_node = nearest_naieve(nodes, nnodes, &pt);
-	printf("By full: (%f, %f) = %f\n",
-				 nearest_node->pt.x, nearest_node->pt.y,
-				 dist(&pt, &nearest_node->pt));
-	fflush(NULL);
-	nearest_node = nearest_by_tree(&kd_head, &pt);
-	printf("By tree: (%f, %f) = %f\n", nearest_node->pt.x, nearest_node->pt.y,
-				 dist(&pt, &nearest_node->pt));
-	fflush(NULL);
+	for(int i = 0; i < 200; ++i) {
+		struct point pt;
+		pt.x = (float)random() * 200 / RAND_MAX;
+		pt.y = (float)random() * 200 / RAND_MAX;
+		printf("(%f, %f)\n", pt.x, pt.y);
+		
+		struct node *nearest_node_naieve = NULL;
+		struct node *nearest_node_tree = NULL;
+		nearest_node_naieve = nearest_naieve(nodes, nnodes, &pt);
+		printf("By full: (%f, %f) = %f\n",
+					 nearest_node_naieve->pt.x, nearest_node_naieve->pt.y,
+					 dist(&pt, &nearest_node_naieve->pt));
+		fflush(NULL);
+		nearest_node_tree = nearest_by_tree(&kd_head, &pt);
+		printf("By tree: (%f, %f) = %f\n", 
+					 nearest_node_tree->pt.x, nearest_node_tree->pt.y,
+					 dist(&pt, &nearest_node_tree->pt));
+		fflush(NULL);
+		if(nearest_node_tree == nearest_node_naieve)
+			printf("Suceeded\n");
+		else
+			printf("Failed\n");
+	}
 }
 
 void test()

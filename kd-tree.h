@@ -32,5 +32,5 @@ void build_kd_tree(struct node **xnodes, struct node **ynodes, int nnodes, int d
 
 struct node *nearest_by_tree(struct kd_node *root, struct point *pt);
 struct node *nearest_naieve(struct node *nodes, int nnodes, struct point *pt);
-
+void print_kd_tree(struct kd_node *root);
 #endif

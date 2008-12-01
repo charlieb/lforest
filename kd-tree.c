@@ -64,16 +64,10 @@ void xpartition(struct node **nodes, int nnodes, struct node *center,
 	int i, hi_start;
 	*nlo_nodes = hi_start = *nhi_nodes = 0;
 	for(i = 0; i < nnodes; ++i) 
-		if(center == nodes[i]) {
-			printf("Mid: %i: (%f, %f)\n", i, nodes[i]->pt.x, nodes[i]->pt.y);
+		if(center == nodes[i])
 			continue;
-		}
-		else if(nodes[i]->pt.x > center->pt.x) {
+		else if(nodes[i]->pt.x > center->pt.x)
 			nodes_part[++(*nhi_nodes) + hi_start - 1] = nodes[i];
-			printf("High: %i:%i (%f, %f)\n", 
-						 i, (*nhi_nodes) - 1,
-						 nodes[i]->pt.x, nodes[i]->pt.y);
-		}
 		else {
 			/* move all the high nodes along one */
 			hi_start++;
@@ -81,9 +75,6 @@ void xpartition(struct node **nodes, int nnodes, struct node *center,
 				memmove(&nodes_part[hi_start], &nodes_part[hi_start-1], 
 								*nhi_nodes * sizeof(struct node*));
 			nodes_part[++(*nlo_nodes) - 1] = nodes[i];
-			printf("Low: %i:%i (%f, %f)\n", 
-						 i, (*nlo_nodes) - 1,
-						 nodes[i]->pt.x, nodes[i]->pt.y);
 		}
 }
 
@@ -106,7 +97,6 @@ void ypartition(struct node **nodes, int nnodes, struct node *center,
 		}
 }
 
-
 void build_kd_tree(struct node **xnodes, struct node **ynodes, int nnodes, int dim,
 									 struct kd_node *current)
 {
@@ -118,7 +108,6 @@ void build_kd_tree(struct node **xnodes, struct node **ynodes, int nnodes, int d
 	struct node **next_ynodes = NULL;
 
 	int nh, nl, node_idx;
-	current->dim = dim;
 
 	printf("-> %i nodes: %c\n", nnodes, (1 == dim ? 'x' : 'y'));
 	for(int i = 0; i < nnodes; ++i) {
@@ -128,57 +117,45 @@ void build_kd_tree(struct node **xnodes, struct node **ynodes, int nnodes, int d
 		fflush(NULL);
 	}
 
-	if(1 >= nnodes) {
+	memset(current, 0, sizeof(struct kd_node));
+	current->dim = dim;
+	
+	if(1 == nnodes) {
 		current->high = current->low = NULL;
 		current->node = xnodes[0];
-		/*current->high = malloc(sizeof(struct kd_node));
-			current->high->node = xnodes[1];
-			current->high->dim = !dim;
-			current->high->high = current->high->low = NULL;*/
-
 		printf("<- %i nodes\n", nnodes);
 		fflush(NULL);
 		return;
 	}
 
 	node_idx = nnodes / 2;
-	
+	next_ynodes = malloc((nnodes - 1) * sizeof(struct node*));
+	next_xnodes = malloc((nnodes - 1) * sizeof(struct node*));
+
 	if(1 == dim) {
 		current->node = xnodes[node_idx];
 
-		next_ynodes = malloc((nnodes - 1) * sizeof(struct node*));
+		xpartition(ynodes, nnodes, current->node, next_ynodes, &nl, &nh);
+		xpartition(xnodes, nnodes, current->node, next_xnodes, &nl, &nh);
 
-		xpartition(ynodes, nnodes, xnodes[node_idx], next_ynodes, &nl, &nh);
-
-		printf("Mid: (%f, %f)\nLo: %i, M: %i, Hi: %i\n", 
-					 xnodes[node_idx]->pt.x, xnodes[node_idx]->pt.y,
-					 nl, node_idx, nh);
-		fflush(NULL);
-
-		next_xnodes_low = xnodes;
-		next_xnodes_high = &xnodes[nl + 1];
-
-		next_ynodes_low = next_ynodes;
-		next_ynodes_high = &next_ynodes[nl];
 	}
 	else {
 		current->node = ynodes[node_idx];
 
-		next_xnodes = malloc((nnodes - 1) * sizeof(struct node*));
-
-		ypartition(xnodes, nnodes, ynodes[node_idx], next_xnodes, &nl, &nh);
-
-		printf("Mid: (%f, %f)\nLo: %i, M: %i, Hi: %i\n", 
-					 ynodes[node_idx]->pt.x, ynodes[node_idx]->pt.y,
-					 nl, node_idx, nh);
-		fflush(NULL);
-
-		next_ynodes_low = ynodes;
-		next_ynodes_high = &ynodes[nl + 1];
-
-		next_xnodes_low = next_xnodes;
-		next_xnodes_high = &next_xnodes[nl];
+		ypartition(xnodes, nnodes, current->node, next_xnodes, &nl, &nh);
+		ypartition(ynodes, nnodes, current->node, next_ynodes, &nl, &nh);
 	}
+
+	printf("Mid: (%f, %f)\nLo: %i, M: %i, Hi: %i\n", 
+				 xnodes[node_idx]->pt.x, xnodes[node_idx]->pt.y,
+				 nl, node_idx, nh);
+	fflush(NULL);
+	
+	next_xnodes_low = next_xnodes;
+	next_xnodes_high = &next_xnodes[nl];
+	
+	next_ynodes_low = next_ynodes;
+	next_ynodes_high = &next_ynodes[nl];
 	
 	for(int i = 0; i < nl; ++i) {
 		printf("L: (%f, %f)  (%f, %f)\n", 
@@ -194,20 +171,23 @@ void build_kd_tree(struct node **xnodes, struct node **ynodes, int nnodes, int d
 		fflush(NULL);
 	}
 
-	current->low = malloc(sizeof(struct kd_node));
-	current->high = malloc(sizeof(struct kd_node));
+	if(nl > 0) {
+		current->low = malloc(sizeof(struct kd_node));
 	
-	printf("L\n"); fflush(NULL);
-	build_kd_tree(next_xnodes_low, next_ynodes_low, nl, !dim, 
-								current->low);
-	printf("H\n"); fflush(NULL);
-	build_kd_tree(next_xnodes_high, next_ynodes_high, nh, !dim, 
-								current->high);
+		printf("L\n"); fflush(NULL);
+		build_kd_tree(next_xnodes_low, next_ynodes_low, nl, !dim, 
+									current->low);
+	}
 
-	if(1 == dim) 
-		free(next_ynodes);
-	else
-		free(next_xnodes);
+	if(nh > 0) {
+		current->high = malloc(sizeof(struct kd_node));
+		printf("H\n"); fflush(NULL);
+		build_kd_tree(next_xnodes_high, next_ynodes_high, nh, !dim, 
+									current->high);
+	}
+
+	free(next_ynodes);
+	free(next_xnodes);
 
 	printf("<- %i nodes\n", nnodes); fflush(NULL);
 }
@@ -243,7 +223,7 @@ void nearest_rec(struct kd_node *tree, struct point *pt,
 	d = (1 == tree->dim ? tree->node->pt.x - pt->x : tree->node->pt.y - pt->y);
 	
 	if (fabs(d) > *min_dist) {
-		if(tree->node->pt.x > pt->x)
+		if(1 == tree->dim ? tree->node->pt.x >= pt->x : tree->node->pt.y >= pt->y)
 			nearest_rec(tree->low, pt, min_dist, nearest);
 		else
 			nearest_rec(tree->high, pt, min_dist, nearest);
@@ -264,4 +244,14 @@ struct node *nearest_by_tree(struct kd_node *root, struct point *pt)
 
 	nearest_rec(root, pt, &min_dist, &nearest_node);
 	return nearest_node;
+}
+
+void print_kd_tree(struct kd_node *root)
+{
+	if(NULL == root) return;
+
+	printf("print_kd_tree: (%f, %f) : %p\n", 
+				 root->node->pt.x, root->node->pt.y, (void*)root->node);
+	print_kd_tree(root->low);	
+	print_kd_tree(root->high);
 }
