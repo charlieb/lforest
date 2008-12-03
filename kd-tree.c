@@ -1,5 +1,42 @@
 #include "kd-tree.h"
 
+void print_kd_tree(struct kd_node *root)
+{
+	if(NULL == root) return;
+
+	printf("print_kd_tree: (%f, %f) : %p\n", 
+				 root->node->pt.x, root->node->pt.y, (void*)root->node);
+	print_kd_tree(root->low);	
+	print_kd_tree(root->high);
+} 
+
+void print_node(struct node *node)
+{
+	struct line abs_line;
+	abs_branch(node->tree, node->branch, &abs_line);
+	print_line(&abs_line);
+	print_point(&node->pt); printf("\n");
+}
+
+void print_nodes(struct node *nodes, int nnodes)
+{
+	for(int i = 0; i < nnodes; ++i) {
+		print_line(nodes[i].branch);
+		print_point(&nodes[i].pt);
+		printf("\n");
+	}
+}
+
+void print_nodes_ptr(struct node **nodes, int nnodes)
+{
+	for(int i = 0; i < nnodes; ++i) {
+		if(NULL != nodes[i]->branch)
+			print_line(nodes[i]->branch);
+		print_point(&nodes[i]->pt);
+		printf("\n");
+	}
+}
+
 void nodes_from_trees(struct tree *trees, int ntrees,
 											struct node **nodes, int *nnodes)
 {
@@ -25,8 +62,9 @@ void nodes_from_trees(struct tree *trees, int ntrees,
 
 			(*nodes)[*nnodes].tree = &trees[t];
 			(*nodes)[*nnodes].branch = &trees[t].branches[b];
-
+		
 			absolute_branch(&trees[t], b, &abs_branch);
+
 			bisect_line(&(*nodes)[*nnodes].pt, &abs_branch);
 			(*nnodes)++;
 		}
@@ -109,22 +147,12 @@ void build_kd_tree(struct node **xnodes, struct node **ynodes, int nnodes, int d
 
 	int nh, nl, node_idx;
 
-	printf("-> %i nodes: %c\n", nnodes, (1 == dim ? 'x' : 'y'));
-	for(int i = 0; i < nnodes; ++i) {
-		printf("(%f, %f)  (%f, %f)\n", 
-					 xnodes[i]->pt.x, xnodes[i]->pt.y,
-					 ynodes[i]->pt.x, ynodes[i]->pt.y);
-		fflush(NULL);
-	}
-
 	memset(current, 0, sizeof(struct kd_node));
 	current->dim = dim;
 	
 	if(1 == nnodes) {
 		current->high = current->low = NULL;
 		current->node = xnodes[0];
-		printf("<- %i nodes\n", nnodes);
-		fflush(NULL);
 		return;
 	}
 
@@ -146,65 +174,26 @@ void build_kd_tree(struct node **xnodes, struct node **ynodes, int nnodes, int d
 		ypartition(ynodes, nnodes, current->node, next_ynodes, &nl, &nh);
 	}
 
-	printf("Mid: (%f, %f)\nLo: %i, M: %i, Hi: %i\n", 
-				 xnodes[node_idx]->pt.x, xnodes[node_idx]->pt.y,
-				 nl, node_idx, nh);
-	fflush(NULL);
-	
 	next_xnodes_low = next_xnodes;
 	next_xnodes_high = &next_xnodes[nl];
 	
 	next_ynodes_low = next_ynodes;
 	next_ynodes_high = &next_ynodes[nl];
-	
-	for(int i = 0; i < nl; ++i) {
-		printf("L: (%f, %f)  (%f, %f)\n", 
-					 next_xnodes_low[i]->pt.x, next_xnodes_low[i]->pt.y,
-					 next_ynodes_low[i]->pt.x, next_ynodes_low[i]->pt.y);
-		fflush(NULL);
-	}
-
-	for(int i = 0; i < nh; ++i) {
-		printf("H: (%f, %f)  (%f, %f)\n", 
-					 next_xnodes_high[i]->pt.x, next_xnodes_high[i]->pt.y,
-					 next_ynodes_high[i]->pt.x, next_ynodes_high[i]->pt.y);
-		fflush(NULL);
-	}
 
 	if(nl > 0) {
 		current->low = malloc(sizeof(struct kd_node));
-	
-		printf("L\n"); fflush(NULL);
 		build_kd_tree(next_xnodes_low, next_ynodes_low, nl, !dim, 
 									current->low);
 	}
 
 	if(nh > 0) {
 		current->high = malloc(sizeof(struct kd_node));
-		printf("H\n"); fflush(NULL);
 		build_kd_tree(next_xnodes_high, next_ynodes_high, nh, !dim, 
 									current->high);
 	}
 
 	free(next_ynodes);
 	free(next_xnodes);
-
-	printf("<- %i nodes\n", nnodes); fflush(NULL);
-}
-
-struct node *nearest_naieve(struct node *nodes, int nnodes, struct point *pt)
-{
-	int i, smallest;
-	float smallest_dist = FLT_MAX;
-	float d;
-	for(i = 0; i < nnodes; ++i) {
-		d = dist(&nodes[i].pt, pt);
-		if(smallest_dist > d) {
-			smallest = i;
-			smallest_dist = d;
-		}
-	}
-	return &nodes[smallest];
 }
 
 void nearest_rec(struct kd_node *tree, struct point *pt,
@@ -237,6 +226,45 @@ void nearest_rec(struct kd_node *tree, struct point *pt,
 	}
 }
 
+void nearest_range_rec(struct kd_node *tree, struct point *pt,
+											 float range, 
+											 struct node ***in_range, int *nin_range)
+{
+	float d;
+
+	if(NULL == tree) return;
+
+	d = dist(&tree->node->pt, pt);
+	if(d < range) {
+		*in_range = realloc(*in_range, ++(*nin_range) * sizeof(struct node*));
+		(*in_range)[*nin_range - 1] = tree->node;
+	}
+
+	d = (1 == tree->dim ? tree->node->pt.x - pt->x : tree->node->pt.y - pt->y);
+	
+	if (fabs(d) > range) {
+		if(1 == tree->dim ? tree->node->pt.x >= pt->x : tree->node->pt.y >= pt->y)
+			nearest_range_rec(tree->low, pt, range, in_range, nin_range);
+		else
+			nearest_range_rec(tree->high, pt, range, in_range, nin_range);
+	}
+	// If the distance to the target is 
+	// less than the nearest distance, we still need to look
+	// in both directions.
+	else {
+		nearest_range_rec(tree->low, pt, range, in_range, nin_range);
+		nearest_range_rec(tree->high, pt, range, in_range, nin_range);
+	}
+}
+
+int nearest_by_tree_range(struct kd_node *root, struct point *pt, float range,
+													struct node ***in_range, int *nin_range)
+{
+
+	nearest_range_rec(root, pt, range, in_range, nin_range);
+	return *nin_range;
+}
+
 struct node *nearest_by_tree(struct kd_node *root, struct point *pt)
 {
 	struct node *nearest_node = root->node;
@@ -246,12 +274,135 @@ struct node *nearest_by_tree(struct kd_node *root, struct point *pt)
 	return nearest_node;
 }
 
-void print_kd_tree(struct kd_node *root)
+/* TESTING */
+struct node *nearest_naieve(struct node *nodes, int nnodes, struct point *pt)
 {
-	if(NULL == root) return;
+	int i, smallest;
+	float smallest_dist = FLT_MAX;
+	float d;
+	for(i = 0; i < nnodes; ++i) {
+		d = dist(&nodes[i].pt, pt);
+		if(smallest_dist > d) {
+			smallest = i;
+			smallest_dist = d;
+		}
+	}
+	return &nodes[smallest];
+}
 
-	printf("print_kd_tree: (%f, %f) : %p\n", 
-				 root->node->pt.x, root->node->pt.y, (void*)root->node);
-	print_kd_tree(root->low);	
-	print_kd_tree(root->high);
+int nearest_naieve_range(struct node *nodes, int nnodes, struct point *pt,
+																	float range, 
+																	struct node ***in_range, int *nin_range)
+{
+	int i;
+	float d;
+	
+	for(i = 0; i < nnodes; ++i) {
+		d = dist(&nodes[i].pt, pt);
+		if(d <= range) {
+			*in_range = realloc(*in_range, ++(*nin_range) * sizeof(struct node*));
+			(*in_range)[*nin_range - 1] = &nodes[i];
+		}
+	}
+	return *nin_range;
+}
+
+int member_node_ptr(struct node *node, struct node **nodes, int nnodes)
+{
+	for(int i = 0; i < nnodes; ++i)
+		if(node == nodes[i])
+			return 1;
+	return 0;
+}
+
+void free_kd_tree(struct kd_node *tree)
+{
+	if(NULL != tree->low) {
+		free_kd_tree(tree->low);
+		free(tree->low);
+	}
+	if(NULL != tree->high) {
+		free_kd_tree(tree->high);
+		free(tree->high);
+	}
+}
+
+void test_kd_tree()
+{
+	struct node *nodes;
+	int nnodes;
+	clock_t start_time;
+
+	//test_tree(&tree, 15);
+
+	//nodes_from_trees(&tree, 1, &nodes, &nnodes);
+
+	nnodes = 100000;
+	nodes = malloc(nnodes * sizeof(struct node));
+	for(int i = 0; i < nnodes; ++i) {
+		nodes[i].pt.x = (float)random() * 500 / RAND_MAX;
+		nodes[i].pt.y = (float)random() * 500 / RAND_MAX;
+	}
+
+	start_time = clock();
+
+	struct node **xnodes = malloc(nnodes * sizeof(struct node*));
+	struct node **ynodes = malloc(nnodes * sizeof(struct node*));
+	
+	sort_nodes(xnodes, ynodes, nodes, nnodes);
+	printf("Sorted %i branches, twice!\n", nnodes);
+	fflush(NULL);
+	
+	struct kd_node kd_head;
+
+	build_kd_tree(xnodes, ynodes, nnodes, 1, &kd_head);
+
+	free(xnodes);
+	free(ynodes);
+
+	//print_kd_tree(&kd_head);
+
+	/*
+	srand(1);
+	for(int i = 0; i < 2000; ++i) {
+		struct point pt;
+		pt.x = (float)random() * 200 / RAND_MAX;
+		pt.y = (float)random() * 200 / RAND_MAX;
+		struct node *nearest_node_tree = NULL;
+		nearest_node_tree = nearest_by_tree(&kd_head, &pt);
+	}
+	printf("%f secs\n", (clock() - (float)start_time) / (float)CLOCKS_PER_SEC);
+
+	start_time = clock();
+	srand(1);
+	for(int i = 0; i < 2000; ++i) {
+		struct point pt;
+		pt.x = (float)random() * 200 / RAND_MAX;
+		pt.y = (float)random() * 200 / RAND_MAX;
+		struct node *nearest_node_naieve = NULL;
+		nearest_node_naieve = nearest_naieve(nodes, nnodes, &pt);
+	}
+	printf("%f secs\n", (clock() - (float)start_time) / (float)CLOCKS_PER_SEC);
+	*/
+
+	srand(1);
+	for(int i = 0; i < 20000; ++i) {
+		struct point pt;
+		pt.x = (float)random() * 200 / RAND_MAX;
+		pt.y = (float)random() * 200 / RAND_MAX;
+		struct node **near_nodes_tree = NULL;
+		int nnear_nodes_tree = 0;
+		nearest_by_tree_range(&kd_head, &pt, 10.0, &near_nodes_tree, &nnear_nodes_tree);
+		struct node **near_nodes_naieve = NULL;
+		int nnear_nodes_naieve = 0;
+		nearest_naieve_range(nodes, nnodes, &pt, 10.0,
+												 &near_nodes_naieve, &nnear_nodes_naieve);
+		if(nnear_nodes_naieve != nnear_nodes_tree) {
+			printf("Fail\n");
+			continue;
+		}
+		for(int n = 0; n < nnear_nodes_naieve; ++n)
+			if(!member_node_ptr(near_nodes_naieve[n], near_nodes_tree, nnear_nodes_tree))
+				printf("Fail by member\n");
+	}
 }

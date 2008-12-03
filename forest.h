@@ -11,6 +11,7 @@
 #include "turtle.h"
 #include "genetics.h"
 #include "lines-sdl.h"
+#include "kd-tree.h"
 
 #define WIDTH 640
 #define HEIGHT 480

@@ -35,7 +35,7 @@ struct rule_set {
   char *rules;
 };
 
-#define MAX_EXPANSION_SIZE 1000
+#define MAX_EXPANSION_SIZE 10000
 struct tree {
   struct point pos;
 

@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <float.h>
+#include <time.h>
 
 #include "types.h"
 #include "geometry.h"
@@ -31,6 +32,12 @@ void build_kd_tree(struct node **xnodes, struct node **ynodes, int nnodes, int d
 									 struct kd_node *current);
 
 struct node *nearest_by_tree(struct kd_node *root, struct point *pt);
-struct node *nearest_naieve(struct node *nodes, int nnodes, struct point *pt);
+int nearest_by_tree_range(struct kd_node *root, struct point *pt, float range,
+													struct node ***in_range, int *nin_range);
+
+void free_kd_tree(struct kd_node *tree);
+
 void print_kd_tree(struct kd_node *root);
+void print_node(struct node *node);
+void test_kd_tree();
 #endif

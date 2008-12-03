@@ -68,12 +68,74 @@ int closest_hit(struct tree trees[N_TREES], struct ray *ray)
 	return closest_tree;
 }
 
+int closest_hit_by_tree(struct tree trees[N_TREES], struct kd_node *kd_tree,
+												struct ray *ray)
+{
+	struct line abs_leaf;
+	struct point itsec, ray_test;
+
+	float closest = FLT_MAX, distance;
+
+	struct node **near_nodes = NULL;
+	int nnear_nodes = 0;
+	struct node *nearest_node  = NULL;
+
+	const float inc_size = 10.0;
+
+	ray_test = ray->origin;
+	while(ray_test.x > 0 && ray_test.x < WIDTH &&
+				ray_test.y > 0 && ray_test.y < HEIGHT) {
+		nearest_by_tree_range(kd_tree, &ray_test, inc_size, &near_nodes, &nnear_nodes);
+		for(int i = 0; i < nnear_nodes; ++i) {
+			abs_branch(near_nodes[i]->tree, near_nodes[i]->branch, &abs_leaf);
+			if(leaf_ray_intersect(&abs_leaf, ray, &itsec)) {
+				distance = dist(&ray->origin, &itsec);
+				if(distance < closest) {
+					closest = distance;
+					nearest_node= near_nodes[i];
+				}
+			}
+		}
+		free(near_nodes);
+		near_nodes = NULL;
+		nnear_nodes = 0;
+		if(NULL != nearest_node) {
+			if(is_leaf(nearest_node->tree, 
+								 nearest_node->branch - nearest_node->tree->branches))
+				return nearest_node->tree - trees;
+			else /* we hit a branch, no points for you */
+				return -1;
+		}
+
+		ray_test.x += ray->direction.x * inc_size;
+		ray_test.y += ray->direction.y * inc_size;
+	}
+
+	return -1;
+}
+
+
 void light_trees(struct tree trees[N_TREES], int nrays)
 {
 	struct ray ray;
 	float ray_angle;
 	int closest_tree = 0;
 	int r;
+	struct kd_node kd_tree;
+
+	struct node *nodes;
+	int nnodes;
+	struct node **xnodes = NULL, **ynodes = NULL;
+
+	nodes_from_trees(trees, N_TREES, &nodes, &nnodes);
+	if(nnodes <= 0) return;
+	ynodes = malloc(nnodes * sizeof(struct node*));
+	xnodes = malloc(nnodes * sizeof(struct node*));
+	sort_nodes(xnodes, ynodes, nodes, nnodes);
+	build_kd_tree(xnodes, ynodes, nnodes, 1, &kd_tree);
+
+	free(xnodes);
+	free(ynodes);
 	
 	for(r = 0; r < nrays; ++r) {
 		ray.origin.x = WIDTH * (float)rand() / (float)RAND_MAX;
@@ -83,12 +145,16 @@ void light_trees(struct tree trees[N_TREES], int nrays)
 		
 		ray.direction.x = sin_cache((int)ray_angle);
 		ray.direction.y = cos_cache((int)ray_angle);
-		closest_tree = closest_hit(trees, &ray);
+		closest_tree = closest_hit_by_tree(trees, &kd_tree, &ray);
+		//closest_tree = closest_hit(trees, &ray);
 					
 		if(-1 != closest_tree) {
 			trees[closest_tree].score++;
 		}
 	}
+
+	free(nodes);
+	free_kd_tree(&kd_tree);
 }
 
 void iterate_forest(struct tree trees[N_TREES])

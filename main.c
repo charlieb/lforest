@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "turtle.h"
 #include "types.h"
@@ -10,41 +11,34 @@
 #include "genetics.h"
 #include "kd-tree.h"
 
-void test_tree()
+void test_tree(struct tree *tree, int its)
 {
   int i;
-  struct tree tree;
   char *rule;
 
-  SDL_Surface *screen;
+  init_tree(tree);
 
-  init_tree(&tree);
+  tree->pos.x = 0;
+  tree->pos.y = 0;
 
-  tree.pos.x = 0;
-  tree.pos.y = 0;
+  tree->seed.rule_size = 10;
+  tree->seed.num_rules = 1;
+  init_rule_set(&tree->seed);
 
-  tree.seed.rule_size = 10;
-  tree.seed.num_rules = 1;
-  init_rule_set(&tree.seed);
-
-  rule = get_rule(0, &tree.seed);
+  rule = get_rule(0, &tree->seed);
   strncpy(rule, "(++!0)--!0", 10);  
-  chars_to_rule(rule, tree.seed.rule_size, tree.seed.num_rules);
+  chars_to_rule(rule, tree->seed.rule_size, tree->seed.num_rules);
 
   /* Expand the tree N times*/
-  for(i=0; i < 8; ++i) { 
-    expand_rule(tree.expansion, &tree.exp_size, &tree.seed);
-    /*print_syms(tree.expansion, tree.exp_size, tree.seed.num_rules);*/
+  for(i=0; i < its; ++i) { 
+    expand_rule(tree->expansion, &tree->exp_size, &tree->seed);
+    /*print_syms(tree->expansion, tree->exp_size, tree->seed.num_rules);*/
   }
 
-  gen_branches(&tree);
+  gen_branches(tree);
   printf("Generated Branches\n");
-  tree.pos.x = 320;
-  tree.pos.y = 400;
-  draw_tree(&tree, &screen); 
-
-  SDL_FreeSurface(screen);
-  /*  free_tree(&tree); */
+  tree->pos.x = 320;
+  tree->pos.y = 400;
 }
 
 void perfect_tree(struct tree *tree)
@@ -86,61 +80,6 @@ void half_tree(int its)
   /* print_leaves(&tree); */
 }
 
-void test_kd_tree()
-{
-	struct tree tree;
-	struct node *nodes;
-	int nnodes;
-
-	perfect_tree(&tree);
-
-	nodes_from_trees(&tree, 1, &nodes, &nnodes);
-
-	struct node **xnodes = malloc(nnodes * sizeof(struct node*));
-	struct node **ynodes = malloc(nnodes * sizeof(struct node*));
-	
-	sort_nodes(xnodes, ynodes, nodes, nnodes);
-	printf("Sorted %i branches, twice!\n", nnodes);
-	fflush(NULL);
-	for(int i = 0; i < nnodes; ++i)
-		printf("(%f, %f)  (%f, %f)\n", 
-					 xnodes[i]->pt.x, xnodes[i]->pt.y,
-					 ynodes[i]->pt.x, ynodes[i]->pt.y);
-	fflush(NULL);
-	struct kd_node kd_head;
-
-	build_kd_tree(xnodes, ynodes, nnodes, 1, &kd_head);
-
-	free(xnodes);
-	free(ynodes);
-
-	print_kd_tree(&kd_head);
-
-	for(int i = 0; i < 200; ++i) {
-		struct point pt;
-		pt.x = (float)random() * 200 / RAND_MAX;
-		pt.y = (float)random() * 200 / RAND_MAX;
-		printf("(%f, %f)\n", pt.x, pt.y);
-		
-		struct node *nearest_node_naieve = NULL;
-		struct node *nearest_node_tree = NULL;
-		nearest_node_naieve = nearest_naieve(nodes, nnodes, &pt);
-		printf("By full: (%f, %f) = %f\n",
-					 nearest_node_naieve->pt.x, nearest_node_naieve->pt.y,
-					 dist(&pt, &nearest_node_naieve->pt));
-		fflush(NULL);
-		nearest_node_tree = nearest_by_tree(&kd_head, &pt);
-		printf("By tree: (%f, %f) = %f\n", 
-					 nearest_node_tree->pt.x, nearest_node_tree->pt.y,
-					 dist(&pt, &nearest_node_tree->pt));
-		fflush(NULL);
-		if(nearest_node_tree == nearest_node_naieve)
-			printf("Suceeded\n");
-		else
-			printf("Failed\n");
-	}
-}
-
 void test()
 {
   struct tree trees[N_TREES];
@@ -176,6 +115,7 @@ void test()
     iterate_forest(trees);
     draw_ret = draw_forest(trees, &screen);
     breed_forest(trees);
+		printf("."); fflush(NULL);
   }
 
   printf("%i iterations\n", i);
@@ -206,9 +146,7 @@ int main(int argc, char **argv)
   /*
   test_tree();
   */
-	test_kd_tree();
-	return;
-
+	//test_kd_tree();
   test();
 
   printf("Normal Exit\n");
