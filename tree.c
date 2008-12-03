@@ -50,9 +50,10 @@ int leaf_ray_intersect(struct line *leaf, struct ray *ray, struct point *p)
 	/* if there is no intersection, return 0 */
 	struct line ray_vec;
 	ray_vec.start = ray->origin;
-	ray_vec.end = ray->direction;
+	ray_vec.end.x = ray->origin.x + ray->direction.x;
+	ray_vec.end.y = ray->origin.y + ray->direction.y;
 
-	if(!intersect(leaf, &ray_vec, p))
+	if(!intersect(leaf, &ray_vec, p)) 
 		return 0;
 
 	/* check to see if the intersection is on the right end
@@ -97,34 +98,6 @@ int leaf_ray_intersect(struct line *leaf, struct ray *ray, struct point *p)
 	return 1;
 }
 
-/* Finds the nearest leaf that will catch the ray,
-   returns its index,
-   if no leaf catches ray, returns -1
-*/
-int leaf_catches_ray(struct tree *tree, struct ray *ray)
-{
-  float closest = 100000000;
-  int closest_leaf = -1;
-  int distance;
-  int i;
-  struct point itsec;
-
-  for(i=0; i < tree->n_leaves; ++i)
-    if(ray_intersects(ray, tree->branches + tree->leaves[i], &itsec)) {
-      distance = dist(&tree->pos, &itsec);
-      if(distance < closest) {
-				closest = distance;
-				closest_leaf = i;
-			}
-    }
-
-  /* Record the intersection point for drawing */
-  ray->direction.x = itsec.x;
-  ray->direction.y = itsec.y;
-    
-  return closest_leaf;
-}
-
 char is_leaf(struct tree *tree, int branch)
 {
 	int i;
@@ -142,6 +115,15 @@ void absolute_branch(struct tree *tree, int branch, struct line *abs_branch)
 	abs_branch->end.x += tree->pos.x;
 	abs_branch->end.y += tree->pos.y;
 }
+
+void abs_branch(struct tree *tree, struct line *branch, struct line *abs_branch)
+{
+	abs_branch->start.x = branch->start.x + tree->pos.x;
+	abs_branch->start.y = branch->start.y + tree->pos.y;
+	abs_branch->end.x = branch->end.x + tree->pos.x;
+	abs_branch->end.y = branch->end.y + tree->pos.y;
+}
+
 
 int terminal_tree(struct tree *tree)
 {
