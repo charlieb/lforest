@@ -15,11 +15,9 @@ void free_tree(struct tree *tree);
 
 void reset_tree(struct tree *tree);
 
-void randomize_tree(struct tree *tree);
+void iterate_tree(struct tree *tree, int its);
 
-void gen_rays(struct tree *tree);
-
-int leaf_catches_ray(struct tree *tree, struct ray *ray);
+void reset_to_random_tree(struct tree *tree);
 
 int leaf_ray_intersect(struct line *leaf, struct ray *ray, struct point *p);
 
@@ -30,4 +28,6 @@ int terminal_tree(struct tree *tree);
 
 void write_tree(FILE *file, struct tree *tree);
 void read_tree(FILE *file, struct tree *tree);
+void print_tree(struct tree *tree);
+
 #endif

@@ -277,7 +277,7 @@ struct node *nearest_by_tree(struct kd_node *root, struct point *pt)
 /* TESTING */
 struct node *nearest_naieve(struct node *nodes, int nnodes, struct point *pt)
 {
-	int i, smallest;
+	int i, smallest = -1;
 	float smallest_dist = FLT_MAX;
 	float d;
 	for(i = 0; i < nnodes; ++i) {

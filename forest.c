@@ -1,50 +1,48 @@
 #include "forest.h"
 
-void index2coords(int index, int *x, int *y)
+void init_sapling(struct forest *forest, struct tree *tree)
 {
-  *y = index / WIDTH;
-  *x = index - *y * WIDTH;
+	reset_tree(tree);
+	tree->score = forest->config.init_score;
+	iterate_tree(tree, forest->config.init_iterations);
+	tree->next_score = 1 + tree->score * 2;
+
+	tree->pos.x = (int)(forest->config.width * (float)random() / RAND_MAX);
+	tree->pos.y = (int)(forest->config.height * (float)random() / RAND_MAX);
 }
 
-int coords2index(int x, int y)
+
+void init_random_sapling(struct forest *forest, struct tree *tree)
 {
-  return y * WIDTH + x;
+	reset_to_random_tree(tree);
+	tree->score = forest->config.init_score;
+	iterate_tree(tree, forest->config.init_iterations);
+	tree->next_score = 1 + tree->score * 2;
+
+	tree->pos.x = (int)(forest->config.width * (float)random() / RAND_MAX);
+	tree->pos.y = (int)(forest->config.height * (float)random() / RAND_MAX);
 }
 
-void grow_sapling(struct tree* tree, int iterations)
+void alloc_forest(struct forest *forest)
 {
- int init;
- 
- for(init=0; init < iterations; ++init)
-   expand_rule(tree->expansion, 
-	       &tree->exp_size, &tree->seed);
- tree->iterations = iterations;
+	forest->trees = malloc(forest->config.ntrees * sizeof(struct tree));
+	memset(forest->trees, 0, forest->config.ntrees * sizeof(struct tree));
 
- tree->pos.x = (int)(WIDTH * (float)random() / RAND_MAX);
- tree->pos.y = (int)(HEIGHT * (float)random() / RAND_MAX);
+	forest->ray_lines = malloc(forest->config.nrays * sizeof(struct line));
+	memset(forest->ray_lines, 0, forest->config.nrays * sizeof(struct line));
 }
 
-void init_sapling(struct tree* tree)
-{
-  tree->score = 5;
-	tree->next_score = 10;
-  random_rule_set(&tree->seed);
-  grow_sapling(tree, 1);
-}
-
-void init_forest(struct tree trees[N_TREES])
+void init_forest(struct forest *forest)
 {
   int i;
-
-  srandom((unsigned)time(NULL));
-  
-  for(i=0; i < N_TREES; ++i) {
-		init_tree(&trees[i]);
-    init_sapling(&trees[i]);
+	alloc_forest(forest);
+	for(i=0; i < forest->config.ntrees; ++i) {
+		init_tree(&forest->trees[i]);
+		init_random_sapling(forest, &forest->trees[i]);
 	}
 }
 
-int closest_hit(struct tree trees[N_TREES], struct ray *ray)
+int closest_hit(struct tree *trees, int ntrees, struct ray *ray)
 {
 	float closest, distance;
 	int closest_tree = -1, leaf_no, t, b;
@@ -52,7 +50,7 @@ int closest_hit(struct tree trees[N_TREES], struct ray *ray)
 	struct point itsec;
 
 	closest = FLT_MAX;
-	for(t = 0; t < N_TREES; ++t)
+	for(t = 0; t < ntrees; ++t)
 		//for(b = 0; b < trees[t].n_branches; ++b) {
 		for(b = 0; b < trees[t].n_leaves; ++b) {
 			leaf_no = trees[t].leaves[b];
@@ -68,8 +66,8 @@ int closest_hit(struct tree trees[N_TREES], struct ray *ray)
 	return closest_tree;
 }
 
-int closest_hit_by_tree(struct tree trees[N_TREES], struct kd_node *kd_tree,
-												struct ray *ray)
+int closest_hit_by_tree(struct forest *forest,
+												struct kd_node *kd_tree,	struct ray *ray)
 {
 	struct line abs_leaf;
 	struct point itsec, ray_test;
@@ -83,8 +81,8 @@ int closest_hit_by_tree(struct tree trees[N_TREES], struct kd_node *kd_tree,
 	const float inc_size = 10.0;
 
 	ray_test = ray->origin;
-	while(ray_test.x > 0 && ray_test.x < WIDTH &&
-				ray_test.y > 0 && ray_test.y < HEIGHT) {
+	while(ray_test.x > 0 && ray_test.x < forest->config.width &&
+				ray_test.y > 0 && ray_test.y < forest->config.height) {
 		nearest_by_tree_range(kd_tree, &ray_test, inc_size, &near_nodes, &nnear_nodes);
 		for(int i = 0; i < nnear_nodes; ++i) {
 			abs_branch(near_nodes[i]->tree, near_nodes[i]->branch, &abs_leaf);
@@ -100,9 +98,10 @@ int closest_hit_by_tree(struct tree trees[N_TREES], struct kd_node *kd_tree,
 		near_nodes = NULL;
 		nnear_nodes = 0;
 		if(NULL != nearest_node) {
+			/* TODO: make ray look like it hit the branch */
 			if(is_leaf(nearest_node->tree, 
 								 nearest_node->branch - nearest_node->tree->branches))
-				return nearest_node->tree - trees;
+				return nearest_node->tree - forest->trees;
 			else /* we hit a branch, no points for you */
 				return -1;
 		}
@@ -115,7 +114,7 @@ int closest_hit_by_tree(struct tree trees[N_TREES], struct kd_node *kd_tree,
 }
 
 
-void light_trees(struct tree trees[N_TREES], int nrays)
+void light_trees(struct forest *forest)
 {
 	struct ray ray;
 	float ray_angle;
@@ -127,7 +126,7 @@ void light_trees(struct tree trees[N_TREES], int nrays)
 	int nnodes;
 	struct node **xnodes = NULL, **ynodes = NULL;
 
-	nodes_from_trees(trees, N_TREES, &nodes, &nnodes);
+	nodes_from_trees(forest->trees, forest->config.ntrees, &nodes, &nnodes);
 	if(nnodes <= 0) return;
 	ynodes = malloc(nnodes * sizeof(struct node*));
 	xnodes = malloc(nnodes * sizeof(struct node*));
@@ -136,99 +135,78 @@ void light_trees(struct tree trees[N_TREES], int nrays)
 
 	free(xnodes);
 	free(ynodes);
-	
-	for(r = 0; r < nrays; ++r) {
-		ray.origin.x = WIDTH * (float)rand() / (float)RAND_MAX;
-		ray.origin.y = HEIGHT * (float)rand() / (float)RAND_MAX;
-		//ray_angle = 0.0;
+
+	for(r = 0; r < forest->config.nrays; ++r) {
+		ray.origin.x = forest->config.width * (float)rand() / (float)RAND_MAX;
+		ray.origin.y = forest->config.height * (float)rand() / (float)RAND_MAX;
 		ray_angle = 360 * (float)rand() / RAND_MAX;
 		
 		ray.direction.x = sin_cache((int)ray_angle);
 		ray.direction.y = cos_cache((int)ray_angle);
-		closest_tree = closest_hit_by_tree(trees, &kd_tree, &ray);
+
+		closest_tree = closest_hit_by_tree(forest, &kd_tree, &ray);
 		//closest_tree = closest_hit(trees, &ray);
 					
 		if(-1 != closest_tree) {
-			trees[closest_tree].score++;
+			forest->trees[closest_tree].score++;
 		}
 	}
-
+	
 	free(nodes);
 	free_kd_tree(&kd_tree);
 }
 
-void iterate_forest(struct tree trees[N_TREES])
+void iterate_forest(struct forest *forest)
 {
-	const int nrays = 10000;
 	int i;
 
-	/* if your score is zero, you DIE */
-	/* If a tree dies it gets randomly re-initialized */
-	for(i = 0; i < N_TREES; ++i) {
-		//printf("trees[%i].score = %i\n", i, trees[i].score);
-		if(trees[i].score <= -10) {
-			/*if(n_dead_trees < N_TREES)
-				dead_trees[n_dead_trees++] = i;*/
-			//printf("trees[%i] died\n", i);
-			reset_tree(&trees[i]);
-			init_sapling(&trees[i]);
-			gen_branches(&trees[i]);
-		}
-	}
-	
-	light_trees(trees, nrays);
+	/*
+	for(i = 0; i < forest->config.ntrees; ++i)
+		if(forest->trees[i].score <= -10)
+			new_random_sapling(forest, &forest->trees[i]);
+	*/
 
-	for(i = 0; i < N_TREES; ++i) {
-		trees[i].score -= 
+	light_trees(forest);
+
+	for(i = 0; i < forest->config.ntrees; ++i) {
+		forest->trees[i].score -= 
 			MAX(1, 
-					trees[i].n_leaves * 0.5 + 
-					(trees[i].n_branches - trees[i].n_leaves) * 1.00);
+					forest->trees[i].n_leaves * forest->config.leaf_cost + 
+					(forest->trees[i].n_branches - forest->trees[i].n_leaves) * 
+					forest->config.branch_cost);
 
-    if(trees[i].score >= trees[i].next_score) {
-      trees[i].iterations++;
-      expand_rule(trees[i].expansion, &trees[i].exp_size, &trees[i].seed);
-      gen_branches(&trees[i]);
-      trees[i].next_score = 1 + trees[i].next_score * 2;
-    }
+    if(forest->trees[i].score >= forest->trees[i].next_score)
+			iterate_tree(&forest->trees[i], 1);
 	}
 }
 
-void breed_forest(struct tree trees[N_TREES])
+void breed_forest(struct forest *forest)
 {
-  int replace, parent1, parent2, child;
-	float weights[N_TREES], inverted_weights[N_TREES];
+  int i, parent1, parent2, child;
+	float weights[forest->config.ntrees], inverted_weights[forest->config.ntrees];
 
-  generate_weights(trees, N_TREES, weights);
-	invert_weights(weights, N_TREES, inverted_weights);
+  generate_weights(forest->trees, forest->config.ntrees, weights);
+	invert_weights(weights, forest->config.ntrees, inverted_weights);
 
-	//  for(replace = 0; replace < (int)(N_TREES * 0.125); ++replace) {
-	for(replace = 0; replace < N_TREES; ++replace) {
+	for(i = 0; i < (int)(forest->config.ntrees * forest->config.replace_trees); ++i) {
+		
+		child = roulette_select(inverted_weights, forest->config.ntrees);
 
-		child = roulette_select(inverted_weights, N_TREES);
-
-		if(trees[child].score > 0)
+		if(forest->trees[child].score > 0)
 			continue;
-		else if(random() / (float)RAND_MAX > 0.25) {
+		else if(random() / (float)RAND_MAX > forest->config.re_init_chance) {
 			/* some dead trees randomly re-initialized to introduce "fresh blood" */
-			reset_tree(&trees[child]);
-			init_sapling(&trees[child]);
-			gen_branches(&trees[child]);
+			init_random_sapling(forest, &forest->trees[i]);
 			continue;
 		}
-		/*
-		else
-			child = replace;
-		*/
-    /* Select the parents and a place for the child */
-		//child = roulette_select(inverted_weights, N_TREES);
     
     parent1 = child;
     while(child == parent1)
-      parent1 = roulette_select(weights, N_TREES);
+      parent1 = roulette_select(weights, forest->config.ntrees);
     
 		parent2 = child;
     while(child == parent2)
-      parent2 = roulette_select(weights, N_TREES);
+      parent2 = roulette_select(weights, forest->config.ntrees);
 		
     /*parent2 = pick_neighbour(parent1, trees);*/
     /*child = pick_neighbour(parent1, trees);*/
@@ -238,32 +216,37 @@ void breed_forest(struct tree trees[N_TREES])
 	   parent2, trees[parent2].score,
 	   child,   trees[child].score);
 		*/
-    crossover(&trees[parent1], &trees[parent2], &trees[child]);
+    crossover(&forest->trees[parent1], &forest->trees[parent2], 
+							&forest->trees[child]);
 
-		reset_tree(&trees[child]);
-    grow_sapling(&trees[child], 1);
-    gen_branches(&trees[child]);
+		init_sapling(forest, &forest->trees[child]);    
   }
 }
 
-int draw_forest(struct tree trees[N_TREES], SDL_Surface **screen)
+int draw_forest(struct forest *forest, SDL_Surface **screen)
 {
-  return draw_trees(trees, N_TREES, screen);
+  return draw_trees(forest->trees, forest->config.ntrees, screen);
 }
 
-void write_forest(FILE *file, struct tree trees[N_TREES])
+void write_forest(FILE *file, struct forest *forest)
 {
-	int i = N_TREES;
-	fwrite((void*)&i, sizeof(int), 1, file);
-	for(i = 0; i < N_TREES; ++i)
-		write_tree(file, &trees[i]);
+	fwrite((void*)&forest->config.ntrees, sizeof(int), 1, file);
+	for(int i = 0; i < forest->config.ntrees; ++i)
+		write_tree(file, &forest->trees[i]);
 }
 
-void read_forest(FILE *file, struct tree trees[N_TREES])
+void read_forest(FILE *file, struct forest *forest)
 {
-	int i = N_TREES;
-	/* atm N_TREES is a #define constant :( */
-	fread((void*)&i, sizeof(int), 1, file);
-	for(i = 0; i < N_TREES; ++i)
-		read_tree(file, &trees[i]);
+	fread((void*)&forest->config.ntrees, sizeof(int), 1, file);
+	alloc_forest(forest);
+	for(int i = 0; i < forest->config.ntrees; ++i) 
+		read_tree(file, &forest->trees[i]);
+}
+
+void free_forest(struct forest *forest)
+{
+	for(int i = 0; i < forest->config.ntrees; ++i)
+		free_tree(&forest->trees[i]);
+	free(forest->trees);
+	free(forest->ray_lines);
 }

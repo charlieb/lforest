@@ -31,7 +31,7 @@ void free_tree(struct tree *tree)
 
 void reset_tree(struct tree *tree)
 {
-  tree->exp_size = 1;
+	tree->exp_size = 1;
 	memset(tree->expansion, 0, MAX_EXPANSION_SIZE);
   tree->iterations = 0;
   
@@ -43,6 +43,22 @@ void reset_tree(struct tree *tree)
 	tree->n_leaves = 0;
 
   tree->score = 0;
+}
+
+void iterate_tree(struct tree *tree, int its)
+{
+	for(int i = 0; i < its; ++i) {
+		tree->iterations++;
+		expand_rule(tree->expansion, &tree->exp_size, &tree->seed);
+		tree->next_score = 1 + tree->next_score * 2;
+	}
+	gen_branches(tree);
+}
+
+void reset_to_random_tree(struct tree *tree)
+{
+	reset_tree(tree);
+  random_rule_set(&tree->seed);
 }
 
 int leaf_ray_intersect(struct line *leaf, struct ray *ray, struct point *p)
@@ -140,7 +156,6 @@ void write_tree(FILE *file, struct tree *tree)
 	fwrite((void*)&tree->iterations, sizeof(int), 1, file);
 	fwrite((void*)&tree->score, sizeof(int), 1, file);
 	fwrite((void*)&tree->next_score, sizeof(int), 1, file);
-
 	/*
 	print_point(&tree->pos);
 	printf(": %i / %i\n", tree->score, tree->next_score);
@@ -172,4 +187,18 @@ void read_tree(FILE *file, struct tree *tree)
 	printf(": %i / %i\n", tree->score, tree->next_score);
 	print_rule_set(&tree->seed);
 	*/
+
+}
+
+void print_tree(struct tree *tree)
+{
+	printf("Pos: "); print_point(&tree->pos); printf("\n");
+	printf("Score %i / %i\n", tree->score, tree->next_score);
+	printf("Iterations: %i\n", tree->iterations);
+	printf("Rule:\n");
+	print_rule_set(&tree->seed);
+	printf("Exp: "); print_syms(tree->expansion, tree->exp_size, tree->seed.num_rules);
+	printf("\n");
+	printf("Leaves/Branches: %i/%i\n", tree->n_leaves, tree->n_branches);
+	printf("-------\n");
 }

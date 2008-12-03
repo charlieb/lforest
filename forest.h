@@ -13,19 +13,13 @@
 #include "lines-sdl.h"
 #include "kd-tree.h"
 
-#define WIDTH 640
-#define HEIGHT 480
-#define N_TREES 100
+void alloc_forest(struct forest *forest);
+void init_forest(struct forest *forest);
+void iterate_forest(struct forest *forest);
+void breed_forest(struct forest *forest);
+int draw_forest(struct forest *forest, SDL_Surface **screen);
 
-void index2coords(int index, int *x, int *y);
-int coords2index(int x, int y);
-int pick_neighbour(int parent);
-void init_sapling(struct tree* tree);
-void init_forest(struct tree trees[N_TREES]);
-void iterate_forest(struct tree trees[N_TREES]);
-void breed_forest(struct tree trees[N_TREES]);
-int draw_forest(struct tree trees[N_TREES], SDL_Surface **screen);
-
-void write_forest(FILE *file, struct tree trees[N_TREES]);
-void read_forest(FILE *file, struct tree trees[N_TREES]);
+void write_forest(FILE *file, struct forest *forest);
+void read_forest(FILE *file, struct forest *forest);
+void free_forest(struct forest *forest);
 #endif

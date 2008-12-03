@@ -2,17 +2,21 @@
 #define L_SYS_TYPES_H
 
 struct config {
+	
+	int ntrees;
 	int nrays;
-	int nlights;
-	int screen_width;
-	int screen_height;
-	int forest_width;
-	int forest_height;
-	int tree_space;
+	int width;
+	int height;
+	
+	int init_score;
+	int init_iterations;
+
 	float branch_cost;
 	float leaf_cost;
-	
-	
+	/* tree repalcements /1.0 */
+	float replace_trees;
+	/* chance of tree being randomized instead of bread */
+	float re_init_chance;
 };
 
 struct point {
@@ -65,9 +69,18 @@ struct turtle {
 };
 
 struct ray {
-  struct line_eq ray_eq;
 	struct point origin;
   struct point direction;
+};
+
+struct forest {
+	/* config contains n* varaibles e.g. ntrees, nrays etc. */
+	struct config config;
+
+	struct tree *trees;
+
+	/* NB: these are lines for drawing the rays not the rays themselves */
+	struct line *ray_lines;
 };
 
 #endif

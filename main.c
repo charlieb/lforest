@@ -82,7 +82,7 @@ void half_tree(int its)
 
 void test()
 {
-  struct tree trees[N_TREES];
+  struct forest forest;
 
   int i, draw_ret = 0;
 
@@ -95,26 +95,35 @@ void test()
 	forest_filename = malloc(strlen(home) + 10);
 	sprintf(forest_filename, "%s/.lforest", home);
 
-	memset(trees, 0, N_TREES * sizeof(struct tree));
-  init_forest(trees);
+	forest.config.nrays = 10000;
+	forest.config.init_score = 5;
+	forest.config.init_iterations = 1;
+	forest.config.replace_trees = 0.125;
+	forest.config.leaf_cost = 1.0;
+	forest.config.branch_cost = 0.5;
+	forest.config.re_init_chance = 0.25;
+	forest.config.width = 640;
+	forest.config.height = 480;
 
 	forest_file = fopen(forest_filename, "rb");
 	if(NULL == forest_file) {
+		forest.config.ntrees = 100;
+		init_forest(&forest);
 		printf("%s not found: using random trees\n", forest_filename);
 		fflush(NULL);
 	}
 	else {
 		printf("%s found: using saved trees\n", forest_filename);
 		fflush(NULL);
-		read_forest(forest_file, trees);
+		read_forest(forest_file, &forest);
 		fclose(forest_file);
 		forest_file = NULL;
 	}
 
   for(i = 0; draw_ret == 0; ++i) {
-    iterate_forest(trees);
-    draw_ret = draw_forest(trees, &screen);
-    breed_forest(trees);
+    iterate_forest(&forest);
+    draw_ret = draw_forest(&forest, &screen);
+    breed_forest(&forest);
 		printf("."); fflush(NULL);
   }
 
@@ -126,12 +135,12 @@ void test()
 		printf("Failed to open %s: not saving\n", forest_filename);
 	else {
 		printf("saving to %s\n", forest_filename);
-		write_forest(forest_file, trees);
+		write_forest(forest_file, &forest);
 		fclose(forest_file);
 	}
 
-	for(i=0; i < N_TREES; ++i)
-    free_tree(&trees[i]);
+	free_forest(&forest);
+	free(forest_filename);
 		
   SDL_FreeSurface(screen);
 }
