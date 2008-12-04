@@ -5,8 +5,10 @@
 
 void init_rule_set(struct rule_set *rules)
 {
-  if(rules->num_rules == 0) rules->rules = NULL;
-  else rules->rules = malloc(rules->rule_size * rules->num_rules);
+  if(rules->num_rules == 0)
+		rules->rules = NULL;
+  else
+		rules->rules = malloc(rules->rule_size * rules->num_rules);
 }
 
 void free_rule_set(struct rule_set *rules)

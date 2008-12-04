@@ -74,21 +74,22 @@ void draw_tree(struct tree *tree, SDL_Surface **surface)
     while(SDL_PollEvent(&event)) 
       switch(event.type) {
       case SDL_QUIT: 
-	go = 0; 
-	break;
+				go = 0; 
+				break;
       case SDL_KEYDOWN:
-	switch (event.key.keysym.sym) {
-	case SDLK_ESCAPE:
-	case SDLK_q:
-	  exit(0);
-	case SDLK_RETURN:
-	  go = 0;
-	  break;
-	case SDLK_c:
-	  cont = -cont;
-	default:
-	  break;
-	}
+				switch (event.key.keysym.sym) {
+				case SDLK_ESCAPE:
+				case SDLK_q:
+					exit(0);
+				case SDLK_RETURN:
+					go = 0;
+					break;
+				case SDLK_c:
+					cont = -cont;
+					break;
+				default:
+					break;
+				}
       }
     if(cont > 0) go = 0;
   }
@@ -98,9 +99,9 @@ void draw_tree(struct tree *tree, SDL_Surface **surface)
   */
 }
 
-int draw_trees(struct tree trees[], int n_trees, SDL_Surface **surface)
+int draw_forest(struct forest *forest, SDL_Surface **surface)
 {
-  int go = 1, i, tree, leaf;
+  int go = 1, i, t, leaf;
   static int cont = 1;
   unsigned long colour;
   SDL_Event event;
@@ -109,25 +110,38 @@ int draw_trees(struct tree trees[], int n_trees, SDL_Surface **surface)
     *surface = make_sdl_surface(640, 480);
   else
     SDL_FillRect(*surface, NULL, 0x000000);
+
+
+	for(i = 0; i < forest->config.nrays; ++i) {
+		if((float)rand() / (float)RAND_MAX > 0.25) continue;
+		pthread_mutex_lock(&forest->ray_lines_mtx);
+		lineColor(*surface, 
+							forest->ray_lines[i].start.x, forest->ray_lines[i].start.y,
+							forest->ray_lines[i].end.x, forest->ray_lines[i].end.y,
+							0xFFFFFF20);
+		pthread_mutex_unlock(&forest->ray_lines_mtx);
+	}
   
-  for(tree=0; tree < n_trees; ++tree) {
+  for(t = 0; t < forest->config.ntrees; ++t) {
     leaf = 0;
-    for (i=0; i < trees[tree].n_branches; ++i) {
+		pthread_mutex_lock(&forest->trees_mtx);
+    for (i = 0; i < forest->trees[t].n_branches; ++i) {
       colour = 0xAAAA00FF;
       /* If branch is a leaf colour it green */
-      if(leaf < trees[tree].n_leaves)
-				if(trees[tree].leaves[leaf] == i) {
+      if(leaf < forest->trees[t].n_leaves)
+				if(forest->trees[t].leaves[leaf] == i) {
 					colour = 0x00FF00FF;
 					leaf++;
 				}
 			
       lineColor(*surface, 
-								trees[tree].pos.x - trees[tree].branches[i].start.x, 
-								trees[tree].pos.y - trees[tree].branches[i].start.y,
-								trees[tree].pos.x - trees[tree].branches[i].end.x,
-								trees[tree].pos.y - trees[tree].branches[i].end.y,
+								forest->trees[t].pos.x + forest->trees[t].branches[i].start.x, 
+								forest->trees[t].pos.y + forest->trees[t].branches[i].start.y,
+								forest->trees[t].pos.x + forest->trees[t].branches[i].end.x,
+								forest->trees[t].pos.y + forest->trees[t].branches[i].end.y,
 								colour);
     }
+		pthread_mutex_unlock(&forest->trees_mtx);
   }
 
   SDL_Flip(*surface);
@@ -150,6 +164,9 @@ int draw_trees(struct tree trees[], int n_trees, SDL_Surface **surface)
 					cont = -cont;
 					printf((cont < 0 ? "Paused\n" : "Unpaused\n"));
 					break;
+				case SDLK_s:
+					//save_frame()
+					break;
 				default:
 					break;
 				}
@@ -162,4 +179,21 @@ int draw_trees(struct tree trees[], int n_trees, SDL_Surface **surface)
   /*  SDL_FreeSurface(*surface);
   *surface = NULL;
   */
+}
+
+void *draw_forest_thread_start(void *forest_str)
+{
+	struct forest *forest = (struct forest*)forest_str;
+  SDL_Surface *screen = NULL; 
+
+	while(!draw_forest(forest, &screen)) {
+		printf("^");
+		usleep(500000);
+	}
+
+  SDL_FreeSurface(screen);
+
+	forest->stop = 1;
+
+	return NULL;
 }

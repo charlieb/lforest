@@ -1,6 +1,8 @@
 #ifndef L_SYS_TYPES_H
 #define L_SYS_TYPES_H
 
+#include <pthread.h>
+
 struct config {
 	
 	int ntrees;
@@ -77,10 +79,14 @@ struct forest {
 	/* config contains n* varaibles e.g. ntrees, nrays etc. */
 	struct config config;
 
+	pthread_mutex_t trees_mtx;
 	struct tree *trees;
 
 	/* NB: these are lines for drawing the rays not the rays themselves */
+	pthread_mutex_t ray_lines_mtx;
 	struct line *ray_lines;
+
+	int stop;
 };
 
 #endif

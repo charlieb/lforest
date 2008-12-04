@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <float.h>
+#include <pthread.h>
 
 #include "types.h"
 #include "tree.h"

@@ -84,13 +84,13 @@ void test()
 {
   struct forest forest;
 
-  int i, draw_ret = 0;
-
-  SDL_Surface *screen = NULL; 
+  int i;
 
 	FILE *forest_file = NULL;
 	char *home = getenv("HOME");
 	char *forest_filename = NULL;
+
+	pthread_t draw_thread;
 
 	forest_filename = malloc(strlen(home) + 10);
 	sprintf(forest_filename, "%s/.lforest", home);
@@ -100,14 +100,14 @@ void test()
 	forest.config.init_iterations = 1;
 	forest.config.replace_trees = 0.125;
 	forest.config.leaf_cost = 1.0;
-	forest.config.branch_cost = 0.5;
+	forest.config.branch_cost = 2.0;
 	forest.config.re_init_chance = 0.25;
 	forest.config.width = 640;
 	forest.config.height = 480;
 
 	forest_file = fopen(forest_filename, "rb");
 	if(NULL == forest_file) {
-		forest.config.ntrees = 100;
+		forest.config.ntrees = 250;
 		init_forest(&forest);
 		printf("%s not found: using random trees\n", forest_filename);
 		fflush(NULL);
@@ -120,13 +120,17 @@ void test()
 		forest_file = NULL;
 	}
 
-  for(i = 0; draw_ret == 0; ++i) {
+	forest.stop = 0;
+	pthread_create(&draw_thread, NULL, draw_forest_thread_start, (void*)&forest);
+
+	for(i = 0; 0 == forest.stop; ++i) {
     iterate_forest(&forest);
-    draw_ret = draw_forest(&forest, &screen);
     breed_forest(&forest);
 		printf("."); fflush(NULL);
   }
 
+	pthread_join(draw_thread, NULL);
+	
   printf("%i iterations\n", i);
   
 	forest_file = fopen(forest_filename, "wb");
@@ -141,8 +145,6 @@ void test()
 
 	free_forest(&forest);
 	free(forest_filename);
-		
-  SDL_FreeSurface(screen);
 }
 
 
@@ -156,6 +158,7 @@ int main(int argc, char **argv)
   test_tree();
   */
 	//test_kd_tree();
+	srand(time(NULL));
   test();
 
   printf("Normal Exit\n");

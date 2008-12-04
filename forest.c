@@ -25,6 +25,9 @@ void init_random_sapling(struct forest *forest, struct tree *tree)
 
 void alloc_forest(struct forest *forest)
 {
+	pthread_mutex_init(&forest->trees_mtx, NULL);
+	pthread_mutex_init(&forest->ray_lines_mtx, NULL);
+
 	forest->trees = malloc(forest->config.ntrees * sizeof(struct tree));
 	memset(forest->trees, 0, forest->config.ntrees * sizeof(struct tree));
 
@@ -36,6 +39,7 @@ void init_forest(struct forest *forest)
 {
   int i;
 	alloc_forest(forest);
+
 	for(i=0; i < forest->config.ntrees; ++i) {
 		init_tree(&forest->trees[i]);
 		init_random_sapling(forest, &forest->trees[i]);
@@ -67,10 +71,11 @@ int closest_hit(struct tree *trees, int ntrees, struct ray *ray)
 }
 
 int closest_hit_by_tree(struct forest *forest,
-												struct kd_node *kd_tree,	struct ray *ray)
+												struct kd_node *kd_tree, struct ray *ray,
+												struct line *ray_line)
 {
 	struct line abs_leaf;
-	struct point itsec, ray_test;
+	struct point itsec, ray_test, closest_itsec;
 
 	float closest = FLT_MAX, distance;
 
@@ -90,7 +95,8 @@ int closest_hit_by_tree(struct forest *forest,
 				distance = dist(&ray->origin, &itsec);
 				if(distance < closest) {
 					closest = distance;
-					nearest_node= near_nodes[i];
+					nearest_node = near_nodes[i];
+					closest_itsec = itsec;
 				}
 			}
 		}
@@ -98,7 +104,10 @@ int closest_hit_by_tree(struct forest *forest,
 		near_nodes = NULL;
 		nnear_nodes = 0;
 		if(NULL != nearest_node) {
-			/* TODO: make ray look like it hit the branch */
+			pthread_mutex_lock(&forest->ray_lines_mtx);
+			ray_line->start = ray->origin;
+			ray_line->end = closest_itsec;
+			pthread_mutex_unlock(&forest->ray_lines_mtx);
 			if(is_leaf(nearest_node->tree, 
 								 nearest_node->branch - nearest_node->tree->branches))
 				return nearest_node->tree - forest->trees;
@@ -136,6 +145,10 @@ void light_trees(struct forest *forest)
 	free(xnodes);
 	free(ynodes);
 
+	pthread_mutex_lock(&forest->ray_lines_mtx);
+	memset(forest->ray_lines, 0, forest->config.nrays * sizeof(struct line));
+	pthread_mutex_unlock(&forest->ray_lines_mtx);
+
 	for(r = 0; r < forest->config.nrays; ++r) {
 		ray.origin.x = forest->config.width * (float)rand() / (float)RAND_MAX;
 		ray.origin.y = forest->config.height * (float)rand() / (float)RAND_MAX;
@@ -144,7 +157,7 @@ void light_trees(struct forest *forest)
 		ray.direction.x = sin_cache((int)ray_angle);
 		ray.direction.y = cos_cache((int)ray_angle);
 
-		closest_tree = closest_hit_by_tree(forest, &kd_tree, &ray);
+		closest_tree = closest_hit_by_tree(forest, &kd_tree, &ray, &forest->ray_lines[r]);
 		//closest_tree = closest_hit(trees, &ray);
 					
 		if(-1 != closest_tree) {
@@ -175,8 +188,11 @@ void iterate_forest(struct forest *forest)
 					(forest->trees[i].n_branches - forest->trees[i].n_leaves) * 
 					forest->config.branch_cost);
 
-    if(forest->trees[i].score >= forest->trees[i].next_score)
+    if(forest->trees[i].score >= forest->trees[i].next_score) {
+			pthread_mutex_lock(&forest->trees_mtx);
 			iterate_tree(&forest->trees[i], 1);
+			pthread_mutex_unlock(&forest->trees_mtx);
+		}
 	}
 }
 
@@ -221,11 +237,6 @@ void breed_forest(struct forest *forest)
 
 		init_sapling(forest, &forest->trees[child]);    
   }
-}
-
-int draw_forest(struct forest *forest, SDL_Surface **screen)
-{
-  return draw_trees(forest->trees, forest->config.ntrees, screen);
 }
 
 void write_forest(FILE *file, struct forest *forest)
