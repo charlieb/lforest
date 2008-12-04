@@ -128,23 +128,23 @@ void draw_tree(struct tree *tree, SDL_Surface **surface)
   */
 }
 
-int draw_forest(struct forest *forest, SDL_Surface **surface)
+void draw_forest(struct forest *forest, SDL_Surface *surface)
 {
-  int go = 1, i, t, leaf;
-  static int cont = 1;
+  int i, t, leaf;
   unsigned long colour;
-  SDL_Event event;
 
-  if(NULL == *surface)
-    *surface = make_sdl_surface(640, 480);
-  else
-    SDL_FillRect(*surface, NULL, 0x000000);
+	struct line null_line;
 
+	memset(&null_line, 0, sizeof(struct line));
+
+	SDL_FillRect(surface, NULL, 0x000000);
 
 	for(i = 0; i < forest->config.nrays; ++i) {
+		if(0 == memcmp(&forest->ray_lines[i], &null_line, sizeof(struct line)))
+			 continue;
 		if((float)rand() / (float)RAND_MAX > 0.25) continue;
 		pthread_mutex_lock(&forest->ray_lines_mtx);
-		lineColor(*surface, 
+		lineColor(surface, 
 							forest->ray_lines[i].start.x, forest->ray_lines[i].start.y,
 							forest->ray_lines[i].end.x, forest->ray_lines[i].end.y,
 							0xFFFFFF20);
@@ -163,7 +163,7 @@ int draw_forest(struct forest *forest, SDL_Surface **surface)
 					leaf++;
 				}
 			
-      lineColor(*surface, 
+      lineColor(surface, 
 								forest->trees[t].pos.x + forest->trees[t].branches[i].start.x, 
 								forest->trees[t].pos.y + forest->trees[t].branches[i].start.y,
 								forest->trees[t].pos.x + forest->trees[t].branches[i].end.x,
@@ -173,54 +173,51 @@ int draw_forest(struct forest *forest, SDL_Surface **surface)
 		pthread_mutex_unlock(&forest->trees_mtx);
   }
 
-  SDL_Flip(*surface);
-  
-  while(go) {
+  SDL_Flip(surface);
+}
+
+void *draw_forest_thread_start(void *forest_str)
+{
+	int quit = 0, paused = -1, step = 0;
+	struct forest *forest = (struct forest*)forest_str;
+  SDL_Surface *surface = make_sdl_surface(forest->config.width, 
+																					forest->config.height); 
+  SDL_Event event;
+		
+	while(!quit) {
     while(SDL_PollEvent(&event)) 
       switch(event.type) {
       case SDL_QUIT: 
-				return -1; 
+				quit = 1; 
 				break;
       case SDL_KEYDOWN:
 				switch (event.key.keysym.sym) {
 				case SDLK_ESCAPE:
 				case SDLK_q:
-					return -1;
+					quit = 1;
 				case SDLK_RETURN:
-					go = 0;
+					step = 1;
 					break;
-				case SDLK_c:
-					cont = -cont;
-					printf((cont < 0 ? "Paused\n" : "Unpaused\n"));
+				case SDLK_p:
+					paused = -paused;
+					printf((paused > 0 ? "\nDisplay Paused\n" : "\nDisplay Unpaused\n"));
 					break;
 				case SDLK_s:
-					save_frame(*surface);
+					save_frame(surface);
 					break;
 				default:
 					break;
 				}
       }
-    if(cont > 0) go = 0;
-	}
-	
-  return 0;
-
-  /*  SDL_FreeSurface(*surface);
-  *surface = NULL;
-  */
-}
-
-void *draw_forest_thread_start(void *forest_str)
-{
-	struct forest *forest = (struct forest*)forest_str;
-  SDL_Surface *screen = NULL; 
-
-	while(!draw_forest(forest, &screen)) {
-		printf("^");
+    if(paused < 0 || step) {
+			draw_forest(forest, surface);
+			printf("^");
+			step = 0;
+		}
 		usleep(500000);
 	}
-
-  SDL_FreeSurface(screen);
+	
+  SDL_FreeSurface(surface);
 
 	forest->stop = 1;
 

@@ -120,6 +120,7 @@ void test()
 		forest_file = NULL;
 	}
 
+	/* Launch the display thread */
 	forest.stop = 0;
 	pthread_create(&draw_thread, NULL, draw_forest_thread_start, (void*)&forest);
 

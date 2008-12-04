@@ -13,6 +13,6 @@
 
 SDL_Surface *make_sdl_surface(int width, int height);
 void draw_tree(struct tree *tree, SDL_Surface **surface);
-int draw_forest(struct forest *forest, SDL_Surface **surface);
+void draw_forest(struct forest *forest, SDL_Surface *surface);
 void *draw_forest_thread_start(void *forest_str);
 #endif
