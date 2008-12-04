@@ -23,13 +23,42 @@ SDL_Surface *make_sdl_surface(int width, int height)
    * requesting a software surface
    */
 
-  screen = SDL_SetVideoMode(width, height, 8, SDL_SWSURFACE | SDL_DOUBLEBUF);
+  screen = SDL_SetVideoMode(width, height, 24, SDL_SWSURFACE | SDL_DOUBLEBUF);
   if ( screen == NULL ) {
     fprintf(stderr, "Couldn't set %dx%d video mode: %s\n",
 	    width, height, SDL_GetError());
     exit(1);
   }
   return screen;
+}
+
+void save_frame(SDL_Surface *surface)
+{
+	static int frame_no = 0;
+
+	char *home = getenv("HOME");
+	char *filename = NULL;
+
+	filename = malloc(strlen(home) + 15);
+	sprintf(filename, "%s/forest%.3i.jpg", home, ++frame_no);
+
+	unsigned char *image = malloc(surface->w * surface->h * 3);
+	int bpp = surface->format->BytesPerPixel;
+	Uint8 *p = NULL;
+
+	for(int x = 0; x < surface->w; ++x)
+		for(int y = 0; y < surface->h; ++y) {
+			/* Here p is the address to the pixel we want to set */
+			p = (Uint8 *)surface->pixels + y * surface->pitch + x * bpp;
+			image[(x + y * surface->w) * 3 + 0] = 
+				(SDL_BYTEORDER == SDL_BIG_ENDIAN ? p[0] : p[2]);
+			image[(x + y * surface->w) * 3 + 1] = p[1];
+			image[(x + y * surface->w) * 3 + 2] = 				
+				(SDL_BYTEORDER == SDL_BIG_ENDIAN ? p[2] : p[0]);
+		}
+	write_jpeg(image, surface->w, surface->h, filename);
+	printf("\nSaved image: %s\n", filename);
+	free(image);
 }
 
 void draw_tree(struct tree *tree, SDL_Surface **surface)
@@ -165,7 +194,7 @@ int draw_forest(struct forest *forest, SDL_Surface **surface)
 					printf((cont < 0 ? "Paused\n" : "Unpaused\n"));
 					break;
 				case SDLK_s:
-					//save_frame()
+					save_frame(*surface);
 					break;
 				default:
 					break;

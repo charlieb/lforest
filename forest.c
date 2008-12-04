@@ -85,6 +85,8 @@ int closest_hit_by_tree(struct forest *forest,
 
 	const float inc_size = 10.0;
 
+	closest_itsec.x = closest_itsec.y = 0.0;
+
 	ray_test = ray->origin;
 	while(ray_test.x > 0 && ray_test.x < forest->config.width &&
 				ray_test.y > 0 && ray_test.y < forest->config.height) {

@@ -9,6 +9,7 @@
 
 #include "turtle.h"
 #include "types.h"
+#include "jpeg.h"
 
 SDL_Surface *make_sdl_surface(int width, int height);
 void draw_tree(struct tree *tree, SDL_Surface **surface);

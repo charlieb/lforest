@@ -99,8 +99,8 @@ void test()
 	forest.config.init_score = 5;
 	forest.config.init_iterations = 1;
 	forest.config.replace_trees = 0.125;
-	forest.config.leaf_cost = 1.0;
-	forest.config.branch_cost = 2.0;
+	forest.config.leaf_cost = 0.5;
+	forest.config.branch_cost = 1.0;
 	forest.config.re_init_chance = 0.25;
 	forest.config.width = 640;
 	forest.config.height = 480;
